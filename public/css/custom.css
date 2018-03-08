@@ -1,0 +1,60 @@
+footer {
+    color: #FFF;
+    text-align: center;
+    font-size: 75%;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: #10161A;
+    display: flex;
+    padding: 15px 0px 15px 0px;
+}
+
+input {
+    margin-bottom: 10px !important;
+}
+
+.navbar-inverse {
+    background-color: #10161A !important;
+}
+
+.container {
+    width: auto !important;
+}
+
+.navbar {
+    border-radius: 0px !important;
+}
+
+.db-login-form {
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid #EBF1F5;
+    margin: 0px 15px 0px 15px;
+    padding: 15px 15px 15px 15px;
+    text-align: center;
+    width: calc(100% - 40px);
+}
+
+.db-login-formgroup {
+    margin: 0 auto;
+    text-align: left;
+}
+
+.db-flex-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.db-flex-row-item {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.db-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}

@@ -18,7 +18,7 @@
     "email": "me@astepantsov.com",
     "url": "https://astepantsov.com/"
   },
-  "license": "GPL",
+  "license": "GPL-3.0-or-later",
   "bugs": {
     "url": "https://github.com/Pyroman06/db-backup/issues"
   },
@@ -37,15 +37,22 @@
   },
   "dependencies": {
     "@blueprintjs/core": "^2.0.0-rc.2",
+    "bcrypt": "^1.0.3",
     "body-parser": "^1.18.2",
     "cookie-parser": "^1.4.3",
     "express": "^4.16.2",
+    "express-session": "^1.15.6",
     "mongoose": "^5.0.9",
+    "passport": "^0.4.0",
+    "passport-local": "^1.0.0",
     "react": "^16.2.0",
     "react-addons-css-transition-group": "^15.6.2",
+    "react-bootstrap": "^0.32.1",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.7",
+    "react-router-bootstrap": "^0.24.4",
     "react-router-dom": "^4.2.2",
+    "react-transition-group": "^2.2.1",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0"
   }
