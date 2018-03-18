@@ -1,3 +1,9 @@
+body {
+    position: relative;
+    padding-bottom: 44px;
+    min-height: 100vh;
+}
+
 footer {
     color: #FFF;
     text-align: center;
@@ -8,6 +14,7 @@ footer {
     background: #10161A;
     display: flex;
     padding: 15px 0px 15px 0px;
+    height: 44px;
 }
 
 input {
@@ -26,17 +33,17 @@ input {
     border-radius: 0px !important;
 }
 
-.db-login-form {
+.db-login-form-container {
     display: inline-block;
     border-radius: 3px;
-    border: 1px solid #EBF1F5;
+    border: 1px solid #D8E1E8;
     margin: 0px 15px 0px 15px;
     padding: 15px 15px 15px 15px;
     text-align: center;
     width: calc(100% - 40px);
 }
 
-.db-login-formgroup {
+.db-login-form {
     margin: 0 auto;
     text-align: left;
 }
@@ -57,4 +64,29 @@ input {
     align-items: center;
     justify-content: center;
     height: 100vh;
+}
+
+.db-dashboard {
+    padding: 0px 15px 0px 15px;
+}
+
+.db-backup-progress {
+    width: 200px !important;
+}
+
+.db-settings {
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid #D8E1E8;
+    margin: 0px 15px 0px 15px;
+    padding: 15px 15px 15px 15px;
+    width: calc(100% - 30px);
+}
+
+.db-form-default {
+    display: inline-block;
+    border-radius: 3px;
+    border: 1px solid #D8E1E8;
+    padding: 15px 15px 15px 15px;
+    text-align: left;
 }

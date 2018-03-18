@@ -1,8 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Button, Switch, Alert, Intent } from '@blueprintjs/core';
-import { FormGroup, Form } from 'react-bootstrap';
+import { Button, Switch, Intent, FormGroup } from '@blueprintjs/core';
+import { Form } from 'react-bootstrap';
 import { SetUser } from '../actions/user';
+import { AppToaster } from './toaster';
 
 class LoginForm extends React.Component {
     constructor (props) {
@@ -54,7 +55,7 @@ class LoginForm extends React.Component {
         })
         .then((response) => {
             if (!response.ok) {
-                throw Error(response.statusText);
+                AppToaster.show({ message: response.statusText, intent: Intent.DANGER });
             }
 
             return response;
@@ -63,12 +64,14 @@ class LoginForm extends React.Component {
         .then((data) => {
             if (!data.error) {
                 this.props.SetUser(data.user);
+                AppToaster.show({ message: "You have logged in as " + data.user.username, intent: Intent.SUCCESS });
             } else {
                 this.setState({
                     error: data.message,
                     loginDisabled: false,
                     isErrorOpen: true
                 });
+                AppToaster.show({ message: data.message, intent: Intent.DANGER });
             }
         })
         .catch((err) => {
@@ -77,7 +80,7 @@ class LoginForm extends React.Component {
                 loginDisabled: false,
                 isErrorOpen: true
             });
-            console.log(err);
+            AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: Intent.DANGER });
         });
     }
 
@@ -99,20 +102,17 @@ class LoginForm extends React.Component {
                 </div>
                 <div className="db-flex-row-item">
                     <Form className="db-login-form">
-                        <FormGroup className="db-login-formgroup">
-                            <input className="pt-input pt-intent-primary pt-large pt-fill" type="text" placeholder="Username" dir="auto" onChange={this.usernameChange.bind(this)} />
-                            <br />
-                            <input className="pt-input pt-intent-primary pt-large pt-fill" type="password" placeholder="Password" dir="auto" onChange={this.passwordChange.bind(this)} />
-                            <br />
-                            <Switch className="pt-large" checked={this.state.rememberMe} label="Remember me" inline onChange={this.rememberMeChange.bind(this)} />
-                            <br />
-                            <Button text="Login" className="pt-large pt-fill" loading={this.state.loginDisabled} onClick={this.login.bind(this)} />
-                            <Alert confirmButtonText="Close" intent={Intent.DANGER} isOpen={this.state.isErrorOpen} onClose={this.closeError.bind(this)}>
-                                <p>
-                                    {this.state.error}
-                                </p>
-                            </Alert>
-                        </FormGroup>
+                        <div className="db-login-form-container">
+                            <FormGroup className="text-left" labelFor="db-login" label="Username">
+                                <input id="db-login" className="pt-input pt-intent-primary pt-large pt-fill" type="text" placeholder="Username" dir="auto" onChange={this.usernameChange.bind(this)} />
+                            </FormGroup>
+                            <FormGroup className="text-left" labelFor="db-password" label="Password">
+                                <input id="db-password" className="pt-input pt-intent-primary pt-large pt-fill" type="password" placeholder="Password" dir="auto" onChange={this.passwordChange.bind(this)} />
+                            </FormGroup>
+                                <Switch className="pt-large" checked={this.state.rememberMe} label="Remember me" inline onChange={this.rememberMeChange.bind(this)} />
+                                <br />
+                                <Button text="Login" className="pt-large pt-fill" loading={this.state.loginDisabled} onClick={this.login.bind(this)} />
+                        </div>
                     </Form>
                 </div>
             </div>

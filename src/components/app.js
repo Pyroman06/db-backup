@@ -1,10 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Switch, Route, Redirect } from 'react-router-dom';
+import { Switch, Route, Redirect, withRouter } from 'react-router-dom';
 import { Spinner } from '@blueprintjs/core'
 import Home from '../components/home';
 import Header from '../components/header';
 import Footer from '../components/footer';
+import Settings from '../components/settings';
+import About from '../components/about';
 import { SetUser } from '../actions/user';
 
 class App extends React.Component {
@@ -52,9 +54,11 @@ class App extends React.Component {
         } else {
             return (
                 <div className="main-container">
-                    <Header />
-                    <Switch>
+                    <Header location={this.props.location} />
+                    <Switch location={this.props.location}>
                         <Route exact path='/' component={Home} />
+                        <Route exact path='/settings' component={Settings} />
+                        <Route exact path='/about' component={About} />
                         <Route path='*' render={(props) => (
                             <Redirect to='/' push />
                         )} />
@@ -78,4 +82,4 @@ const mapDispatchToProps = (dispatch) => {
     };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App));

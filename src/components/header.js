@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { Navbar, Nav, NavItem } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
 import { SetUser } from '../actions/user';
+import { AppToaster } from './toaster';
+import { Intent, Toast } from '@blueprintjs/core';
 
 class Header extends React.Component {
     logout() {
@@ -13,7 +15,7 @@ class Header extends React.Component {
         })
         .then((response) => {
             if (!response.ok) {
-                throw Error(response.statusText);
+                AppToaster.show({ message: response.statusText, intent: Intent.DANGER });
             }
 
             return response;
@@ -22,6 +24,7 @@ class Header extends React.Component {
         .then((data) => {
             if (!data.error) {
                 this.props.SetUser({isLoggedIn: false});
+                AppToaster.show({ message: "You have logged out", intent: Intent.SUCCESS });
             }
         });
     }
@@ -39,7 +42,7 @@ class Header extends React.Component {
                         this.props.User.isLoggedIn ?
                         <Navbar.Collapse>
                             <Nav>
-                                <LinkContainer to="/">
+                                <LinkContainer exact to="/">
                                     <NavItem eventKey={1}>
                                         Dashboard
                                     </NavItem>
@@ -56,13 +59,13 @@ class Header extends React.Component {
                                 </LinkContainer>
                             </Nav>
                             <Nav pullRight>
-                                <NavItem eventKey={1}>
-                                    Logged in as { this.props.User.username }
-                                </NavItem>
-                                <NavItem eventKey={2} onClick={this.logout.bind(this)}>
+                                <NavItem eventKey={1} onClick={this.logout.bind(this)}>
                                     Logout
                                 </NavItem>
                             </Nav>
+                            <Navbar.Text pullRight>
+                                Logged in as {this.props.User.username}
+                            </Navbar.Text>
                         </Navbar.Collapse>
                         : 
                         <Navbar.Collapse>
