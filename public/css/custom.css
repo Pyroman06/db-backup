@@ -66,6 +66,13 @@ input {
     height: 100vh;
 }
 
+.db-loading-fill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
 .db-dashboard {
     padding: 0px 15px 0px 15px;
 }

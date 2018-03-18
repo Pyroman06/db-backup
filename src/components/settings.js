@@ -127,7 +127,7 @@ class Settings extends React.Component {
         if (this.props.User.isLoggedIn) {
             if (this.state.loading || this.state.error) {
                 return (
-                    <div className="db-loading">
+                    <div className="db-loading-fill">
                         <Spinner />
                     </div>
                 );
