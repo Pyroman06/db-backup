@@ -17,24 +17,116 @@ class Dashboard extends React.Component {
             addDatabaseDisabled: false,
             error: false,
             loading: true,
+            initialLoaded: false,
             databases: {},
             schedules: {},
             backups: {},
             isManualBackupOpen: false,
             manualBackupDatabaseId: "",
             manualBackupDestination: "local",
-            manualBackupPath: ""
+            manualBackupPath: "",
+            isAddTaskOpen: false,
+            addTaskDatabase: "",
+            addTaskDestination: "local",
+            addTaskPath: "",
+            addTaskRule: "",
+            addTaskDisabled: false
         };
     }
 
     addTask() {
+        this.setState({
+            addTaskDisabled: true
+        });
+        fetch('/api/scheduler/add', {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                databaseId: this.state.addTaskDatabase,
+                destination: this.state.addTaskDestination,
+                path: this.state.addTaskPath,
+                rule: this.state.addTaskRule
+            })
+        })
+        .then((response) => {
+            if (!response.ok) {
+                this.setState({
+                    addTaskDisabled: false
+                });
+                AppToaster.show({ message: response.statusText, intent: Intent.DANGER });
+            }
 
+            return response;
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.error) {
+                AppToaster.show({ message: "Task was added", intent: Intent.SUCCESS });
+                this.setState({
+                    isAddTaskOpen: false,
+                    addTaskDisabled: false,
+                    addTaskDatabase: "",
+                    addTaskDestination: "local",
+                    addTaskPath: "",
+                    addTaskRule: ""
+                });
+                this.getDashboard();
+            } else {
+                this.setState({
+                    addTaskDisabled: false
+                });
+                AppToaster.show({ message: data.message, intent: Intent.DANGER });
+            }
+        })
+        .catch((err) => {
+            this.setState({
+                addTaskDisabled: false
+            });
+            AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: Intent.DANGER });
+        });
+    }
+
+    removeTask(taskId) {
+        fetch('/api/scheduler/delete', {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                taskId: taskId
+            })
+        })
+        .then((response) => {
+            if (!response.ok) {
+                AppToaster.show({ message: response.statusText, intent: Intent.DANGER });
+            }
+
+            return response;
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.error) {
+                AppToaster.show({ message: "Task was deleted", intent: Intent.SUCCESS });
+                this.getDashboard();
+            } else {
+                AppToaster.show({ message: data.message, intent: Intent.DANGER });
+            }
+        })
+        .catch((err) => {
+            AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: Intent.DANGER });
+        });
     }
 
     getDashboard() {
-        this.setState({
-            loading: true
-        });
+        if (!this.state.initialLoaded) {
+            this.setState({
+                loading: true
+            });
+        }
         fetch('/api/dashboard/get', {
             credentials: 'same-origin',
             method: 'POST',
@@ -58,7 +150,8 @@ class Dashboard extends React.Component {
                     schedules: data.schedules,
                     backups: data.backups,
                     error: false,
-                    loading: false
+                    loading: false,
+                    initialLoaded: true
                 })
             } else {
                 this.setState({
@@ -280,6 +373,36 @@ class Dashboard extends React.Component {
         });
     }
 
+    handleAddTaskOpen() {
+        this.setState({
+            isAddTaskOpen: !this.state.isAddTaskOpen
+        });
+    }
+
+    addTaskDestinationChange(e) {
+        this.setState({
+            addTaskDestination: e.target.value
+        });
+    }
+
+    addTaskPathChange(e) {
+        this.setState({
+            addTaskPath: e.target.value
+        });
+    }
+
+    addTaskDatabaseChange(e) {
+        this.setState({
+            addTaskDatabase: e.target.value
+        });
+    }
+
+    addTaskRuleChange(e) {
+        this.setState({
+            addTaskRule: e.target.value
+        });
+    }
+
     componentWillMount() {
         this.getDashboard();
     }
@@ -404,33 +527,69 @@ class Dashboard extends React.Component {
                     </div>
                     <div className="db-dashboard-item">
                         <h2>Scheduler</h2>
-                        <Button text="Add new task" intent={ Intent.PRIMARY } onClick={this.addTask.bind(this)} />
+                        <Button text="Add new task" intent={ Intent.PRIMARY } onClick={this.handleAddTaskOpen.bind(this)} />
+                        <Collapse isOpen={this.state.isAddTaskOpen}>
+                            <div className="db-form-default" style={{marginTop: "15px"}}>
+                                <div class="pt-select">
+                                    <select onChange={this.addTaskDatabaseChange.bind(this)}>
+                                        <option selected>Choose a database...</option>
+                                        {
+                                            this.state.databases.map(function(database) {
+                                                return <option value={database._id}>{database.name}</option>
+                                            })
+                                        }
+                                    </select>
+                                </div>
+                                <RadioGroup
+                                    label="Backup destination"
+                                    onChange={this.addTaskDestinationChange.bind(this)}
+                                    selectedValue={this.state.addTaskDestination}
+                                >
+                                    <Radio label="Local" value="local" />
+                                    <Radio label="Amazon S3" value="s3" />
+                                </RadioGroup>
+                                {
+                                    this.state.addTaskDestination == "local" &&
+                                    <FormGroup helperText="Path where to store backup" label="Path" labelFor="scheduler-local-path" requiredLabel={true}>
+                                        <input id="scheduler-local-path" className="pt-input pt-intent-primary" type="text" placeholder="Path" dir="auto" value={this.state.addTaskPath} onChange={this.addTaskPathChange.bind(this)} />
+                                    </FormGroup>
+                                    || this.state.addTaskDestination == "s3" &&
+                                    <FormGroup helperText="S3 bucket to store backup in" label="Amazon S3 Bucket" labelFor="scheduler-s3-bucket" requiredLabel={true}>
+                                        <input id="scheduler-s3-bucket" className="pt-input pt-intent-primary" type="text" placeholder="Amazon S3 Bucket" dir="auto" value={this.state.addTaskPath} onChange={this.addTaskPathChange.bind(this)} />
+                                    </FormGroup>
+                                    || null
+                                }
+                                <FormGroup helperText="Enter rule in Cron format" label="Rule" labelFor="scheduler-rule" requiredLabel={true}>
+                                    <input id="scheduler-rule" className="pt-input pt-intent-primary" type="text" placeholder="Rule" dir="auto" value={this.state.addTaskRule} onChange={this.addTaskRuleChange.bind(this)} />
+                                </FormGroup>
+                                <Button text="Add task" intent={ Intent.PRIMARY } onClick={this.addTask.bind(this)} />                                
+                            </div>
+                        </Collapse>
                         <table className="pt-html-table pt-interactive">
                             <thead>
                                 <tr>
                                     <th>Database</th>
                                     <th>Destination</th>
                                     <th>Rule</th>
-                                    <th>Parameters</th>
-                                    <th>Next run</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Project 1</td>
-                                    <td>Local: /home/ubuntu/backups</td>
-                                    <td>Every day at 05:00</td>
-                                    <td>None</td>
-                                    <td>10.03.2018 05:00</td>
-                                </tr>
-                                <tr>
-                                    <td>Project 2</td>
-                                    <td>Amazon S3: Project2Backups</td>
-                                    <td>Every day at 05:00</td>
-                                    <td>None</td>
-                                    <td>10.03.2018 05:00</td>
-                                </tr>
-                            </tbody>
+                            {
+                                this.state.schedules ?
+                                    <tbody>
+                                        {
+                                            this.state.schedules.map(function(schedule) {
+                                                return  <tr>
+                                                            <td>{schedule.database}</td>
+                                                            <td>{(schedule.destination.type == "local" && "Local: " || schedule.destination.type == "s3" && "Amazon S3: ") + (schedule.destination.path)}</td>
+                                                            <td>{schedule.rule}</td>
+                                                            <td><Button text="Delete" intent={ Intent.DANGER } onClick={that.removeTask.bind(that, schedule._id)} /></td>
+                                                        </tr>
+                                            })
+                                        }
+                                    </tbody>
+                                : null
+                            }
                         </table>
                     </div>
                     <div className="db-dashboard-item">
@@ -452,10 +611,10 @@ class Dashboard extends React.Component {
                                         this.state.backups.map(function(backup) {
                                             return  <tr>
                                                         <td>{backup.database}</td>
-                                                        <td>{backup.destination.type}</td>
+                                                        <td>{(backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + (backup.destination.path)}</td>
                                                         <td>{new Date(backup.startDate).toISOString()}</td>
-                                                        <td>{backup.type}</td>
-                                                        <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "saving" && "Saving data" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag>{(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") ? <div><br /><br /><ProgressBar className="db-backup-progress" intent={Intent.WARNING} value={backup.status == "queued" && 0 || backup.status == "progress" && 0.33 || backup.status == "saving" && 0.66 || backup.status == "finished" && 1} /></div> : null}</td>
+                                                        <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
+                                                        <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "saving" && "Saving data" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag>{(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") ? <div style={{paddingTop: "10px"}}><ProgressBar className="db-backup-progress" intent={Intent.WARNING} value={backup.status == "queued" && 0 || backup.status == "progress" && 0.33 || backup.status == "saving" && 0.66 || backup.status == "finished" && 1} /></div> : null}</td>
                                                     </tr>
                                         })
                                     }

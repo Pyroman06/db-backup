@@ -5,6 +5,8 @@ import User from '../models/user';
 import Settings from '../models/settings';
 import Database from '../models/database';
 import Backup from '../models/backup';
+import Scheduler from '../models/scheduler';
+import Cron from 'node-cron';
 
 const router = new Router();
 
@@ -101,16 +103,39 @@ router.post('/settings/save', function(req, res, next) {
 router.post('/dashboard/get', function(req, res, next) {
     if (req.user) {
         Database.find({}, function(err, databases) {
-            Backup.find({}).sort({'startDate': -1, '_id': -1}).limit(20)
-            .exec(function(err, backups) {
+            if (err) {
                 res.json({
-                    error: false,
-                    message: "Dashboard was loaded",
-                    backups: backups,
-                    schedules: {},
-                    databases: databases
+                    error: true,
+                    message: "An internal error occurred"
                 });
-            })
+            } else {
+                Scheduler.find({}, function(err, schedules) {
+                    if (err) {
+                        res.json({
+                            error: true,
+                            message: "An internal error occurred"
+                        });
+                    } else {
+                        Backup.find({}).sort({'startDate': -1, '_id': -1}).limit(20)
+                        .exec(function(err, backups) {
+                            if (err) {
+                                res.json({
+                                    error: true,
+                                    message: "An internal error occurred"
+                                });
+                            } else {
+                                res.json({
+                                    error: false,
+                                    message: "Dashboard was loaded",
+                                    backups: backups,
+                                    schedules: schedules,
+                                    databases: databases
+                                });
+                            }
+                        })
+                    }
+                })
+            }
         })
     } else {
         return res.json({
@@ -263,5 +288,104 @@ router.post('/database/manualbackup', function(req, res, next) {
     }
 });
 
+router.post('/scheduler/add', function(req, res, next) {
+    if (req.user) {
+        if (req.body.databaseId) {
+            Database.findOne({_id: req.body.databaseId}, function(err, database) {
+                if (err) {
+                    res.json({
+                        error: true,
+                        message: "An internal error occurred"
+                    });
+                } else {
+                    if (database) {
+                        if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path && req.body.rule && Cron.validate(req.body.rule)) {
+                            var newScheduler = new Scheduler({database: database.name, destination: {type: req.body.destination, path: req.body.path}, rule: req.body.rule});
+                            newScheduler.save(function(err) {
+                                if (err) {
+                                    res.json({
+                                        error: true,
+                                        message: "An internal error occurred"
+                                    });
+                                } else {
+                                    res.json({
+                                        error: false,
+                                        message: "Task was added"
+                                    });
+                                }
+                            })
+                        } else {
+                            res.json({
+                                error: true,
+                                message: "Invalid parameters"
+                            });
+                        }
+                    } else {
+                        res.json({
+                            error: true,
+                            message: "Couldn't find a database"
+                        });
+                    }
+                }
+            });
+        } else {
+            return res.json({
+                error: true,
+                message: "Parameters missing"
+            });
+        }
+    } else {
+        return res.json({
+            error: true,
+            message: "Not logged in"
+        });
+    }
+});
+
+router.post('/scheduler/delete', function(req, res, next) {
+    if (req.user) {
+        if (req.body.taskId) {
+            Scheduler.findOne({_id: req.body.taskId}, function(err, schedule) {
+                if (err) {
+                    res.json({
+                        error: true,
+                        message: "An internal error occurred"
+                    });
+                } else {
+                    if (schedule) {
+                        schedule.remove(function(err) {
+                            if (err) {
+                                res.json({
+                                    error: true,
+                                    message: "An internal error occurred"
+                                });
+                            } else {
+                                res.json({
+                                    error: false,
+                                    message: "Task was removed"
+                                });
+                            }
+                        });
+                    } else {
+                        res.json({
+                            error: true,
+                            message: "Couldn't find a database"
+                        });
+                    }
+                }
+            });
+        } else {
+            return res.json({
+                error: true,
+                message: "Parameters missing"
+            });
+        }
+    } else {
+        return res.json({
+            error: true,
+            message: "Not logged in"
+        });
+    }
+});
 
 export default router;
