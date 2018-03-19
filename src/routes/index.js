@@ -4,6 +4,7 @@ import Bcrypt from 'bcrypt';
 import User from '../models/user';
 import Settings from '../models/settings';
 import Database from '../models/database';
+import Backup from '../models/backup';
 
 const router = new Router();
 
@@ -100,13 +101,16 @@ router.post('/settings/save', function(req, res, next) {
 router.post('/dashboard/get', function(req, res, next) {
     if (req.user) {
         Database.find({}, function(err, databases) {
-            res.json({
-                error: false,
-                message: "Dashboard was loaded",
-                backups: {},
-                schedules: {},
-                databases: databases
-            });
+            Backup.find({}).sort({'startDate': -1, '_id': -1}).limit(20)
+            .exec(function(err, backups) {
+                res.json({
+                    error: false,
+                    message: "Dashboard was loaded",
+                    backups: backups,
+                    schedules: {},
+                    databases: databases
+                });
+            })
         })
     } else {
         return res.json({
@@ -199,5 +203,65 @@ router.post('/database/delete', function(req, res, next) {
         });
     }
 });
+
+router.post('/database/manualbackup', function(req, res, next) {
+    if (req.user) {
+        if (req.body.databaseId) {
+            Database.findOne({_id: req.body.databaseId}, function(err, database) {
+                if (err) {
+                    res.json({
+                        error: true,
+                        message: "An internal error occurred"
+                    });
+                } else {
+                    if (database) {
+                        if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path) {
+                            var localBackup = new Backup({
+                                database: database.name,
+                                destination: {type: req.body.destination, path: req.body.path},
+                                startDate: Date.now(),
+                                type: "manual",
+                                status: "queued",
+                                log: ""
+                            });
+
+                            localBackup.save(function(err) {
+                                if (err) {
+                                    throw err;
+                                } else {
+                                    res.json({
+                                        error: false,
+                                        message: "Backup was added to the queue"
+                                    });
+                                }
+                            })
+                        } else {
+                            res.json({
+                                error: true,
+                                message: "Invalid destination or path"
+                            });
+                        }
+                    } else {
+                        res.json({
+                            error: true,
+                            message: "Couldn't find a database"
+                        });
+                    }
+                }
+            });
+        } else {
+            return res.json({
+                error: true,
+                message: "Parameters missing"
+            });
+        }
+    } else {
+        return res.json({
+            error: true,
+            message: "Not logged in"
+        });
+    }
+});
+
 
 export default router;

@@ -6,7 +6,6 @@ import Home from '../components/home';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import Settings from '../components/settings';
-import About from '../components/about';
 import { SetUser } from '../actions/user';
 
 class App extends React.Component {
@@ -58,7 +57,6 @@ class App extends React.Component {
                     <Switch location={this.props.location}>
                         <Route exact path='/' component={Home} />
                         <Route exact path='/settings' component={Settings} />
-                        <Route exact path='/about' component={About} />
                         <Route path='*' render={(props) => (
                             <Redirect to='/' push />
                         )} />

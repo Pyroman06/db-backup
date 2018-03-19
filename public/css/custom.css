@@ -73,10 +73,6 @@ input {
     height: 100%;
 }
 
-.db-dashboard {
-    padding: 0px 15px 0px 15px;
-}
-
 .db-backup-progress {
     width: 200px !important;
 }
@@ -90,10 +86,20 @@ input {
     width: calc(100% - 30px);
 }
 
-.db-form-default {
+.db-form-default, .db-dashboard-item {
     display: inline-block;
     border-radius: 3px;
     border: 1px solid #D8E1E8;
     padding: 15px 15px 15px 15px;
     text-align: left;
+}
+
+.db-dashboard-item {
+    display: block !important;
+    margin-bottom: 15px;
+    margin-right: 15px;
+}
+
+.db-dashboard {
+    margin-left: 15px;
 }

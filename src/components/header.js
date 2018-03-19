@@ -52,11 +52,6 @@ class Header extends React.Component {
                                         Settings
                                     </NavItem>
                                 </LinkContainer>
-                                <LinkContainer to="/about">
-                                    <NavItem eventKey={3}>
-                                        About
-                                    </NavItem>
-                                </LinkContainer>
                             </Nav>
                             <Nav pullRight>
                                 <NavItem eventKey={1} onClick={this.logout.bind(this)}>
