@@ -109,14 +109,14 @@ router.post('/dashboard/get', function(req, res, next) {
                     message: "An internal error occurred"
                 });
             } else {
-                Scheduler.find({}, function(err, schedules) {
+                Scheduler.find({}).populate('database').exec(function(err, schedules) {
                     if (err) {
                         res.json({
                             error: true,
                             message: "An internal error occurred"
                         });
                     } else {
-                        Backup.find({}).sort({'startDate': -1, '_id': -1}).limit(20)
+                        Backup.find({}).populate('database').sort({'startDate': -1, '_id': -1}).limit(20)
                         .exec(function(err, backups) {
                             if (err) {
                                 res.json({
@@ -242,7 +242,7 @@ router.post('/database/manualbackup', function(req, res, next) {
                     if (database) {
                         if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path) {
                             var localBackup = new Backup({
-                                database: database.name,
+                                database: database._id,
                                 destination: {type: req.body.destination, path: req.body.path},
                                 startDate: Date.now(),
                                 type: "manual",
@@ -300,7 +300,7 @@ router.post('/scheduler/add', function(req, res, next) {
                 } else {
                     if (database) {
                         if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path && req.body.rule && Cron.validate(req.body.rule)) {
-                            var newScheduler = new Scheduler({database: database.name, destination: {type: req.body.destination, path: req.body.path}, rule: req.body.rule});
+                            var newScheduler = new Scheduler({database: database._id, destination: {type: req.body.destination, path: req.body.path}, rule: req.body.rule});
                             newScheduler.save(function(err) {
                                 if (err) {
                                     res.json({

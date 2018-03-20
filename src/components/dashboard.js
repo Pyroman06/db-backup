@@ -580,7 +580,7 @@ class Dashboard extends React.Component {
                                         {
                                             this.state.schedules.map(function(schedule) {
                                                 return  <tr>
-                                                            <td>{schedule.database}</td>
+                                                            <td>{schedule.database.name}</td>
                                                             <td>{(schedule.destination.type == "local" && "Local: " || schedule.destination.type == "s3" && "Amazon S3: ") + (schedule.destination.path)}</td>
                                                             <td>{schedule.rule}</td>
                                                             <td><Button text="Delete" intent={ Intent.DANGER } onClick={that.removeTask.bind(that, schedule._id)} /></td>
@@ -610,7 +610,7 @@ class Dashboard extends React.Component {
                                     {
                                         this.state.backups.map(function(backup) {
                                             return  <tr>
-                                                        <td>{backup.database}</td>
+                                                        <td>{backup.database.name}</td>
                                                         <td>{(backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + (backup.destination.path)}</td>
                                                         <td>{new Date(backup.startDate).toISOString()}</td>
                                                         <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
