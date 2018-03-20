@@ -7,6 +7,9 @@ import Database from '../models/database';
 import Backup from '../models/backup';
 import Scheduler from '../models/scheduler';
 import Cron from 'node-cron';
+import { BackupQueue, AddSchedule, RemoveSchedule, InitData } from '../queue';
+
+InitData();
 
 const router = new Router();
 
@@ -254,9 +257,19 @@ router.post('/database/manualbackup', function(req, res, next) {
                                 if (err) {
                                     throw err;
                                 } else {
-                                    res.json({
-                                        error: false,
-                                        message: "Backup was added to the queue"
+                                    Backup.findOne({_id: localBackup._id}).populate('database').exec(function(err, backup) {
+                                        if (err) {
+                                            res.json({
+                                                error: true,
+                                                message: "Invalid destination or path"
+                                            });
+                                        } else {
+                                            BackupQueue.push(backup);
+                                            res.json({
+                                                error: false,
+                                                message: "Backup was added to the queue"
+                                            });
+                                        }
                                     });
                                 }
                             })
@@ -308,6 +321,11 @@ router.post('/scheduler/add', function(req, res, next) {
                                         message: "An internal error occurred"
                                     });
                                 } else {
+                                    AddSchedule({
+                                        database: database, 
+                                        destination: newScheduler.destination, 
+                                        rule: newScheduler.rule
+                                    })
                                     res.json({
                                         error: false,
                                         message: "Task was added"
@@ -360,6 +378,7 @@ router.post('/scheduler/delete', function(req, res, next) {
                                     message: "An internal error occurred"
                                 });
                             } else {
+                                RemoveSchedule(schedule._id);
                                 res.json({
                                     error: false,
                                     message: "Task was removed"

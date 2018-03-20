@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog } from '@blueprintjs/core';
+import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea } from '@blueprintjs/core';
 import { AppToaster } from './toaster';
 
 class Dashboard extends React.Component {
@@ -30,7 +30,9 @@ class Dashboard extends React.Component {
             addTaskDestination: "local",
             addTaskPath: "",
             addTaskRule: "",
-            addTaskDisabled: false
+            addTaskDisabled: false,
+            isLogOpen: false,
+            logIndex: null
         };
     }
 
@@ -403,6 +405,19 @@ class Dashboard extends React.Component {
         });
     }
 
+    toggleLogOpen() {
+        this.setState({
+            isLogOpen: !this.state.isLogOpen
+        })
+    }
+
+    openLog(index) {
+        this.setState({
+            isLogOpen: true,
+            logIndex: index
+        })
+    }
+
     componentWillMount() {
         this.getDashboard();
     }
@@ -488,38 +503,38 @@ class Dashboard extends React.Component {
                                                             <Popover content={<Menu><MenuItem icon="floppy-disk" onClick={that.manualBackup.bind(that, database._id)} text="Manual backup" /><MenuItem icon="delete" onClick={that.deleteDatabase.bind(that, database._id)} text="Delete" intent={Intent.DANGER} /></Menu>}>
                                                                 <Button text="Menu" />
                                                             </Popover>
-                                                            <Dialog
-                                                                isOpen={that.state.isManualBackupOpen}
-                                                                onClose={that.toggleManualBackup.bind(that)}
-                                                                title="Manual backup"
-                                                            >
-                                                                <div style={{padding: "15px 15px 15px 15px"}}>
-                                                                    <RadioGroup
-                                                                        label="Backup destination"
-                                                                        onChange={that.manualBackupDestinationChange.bind(that)}
-                                                                        selectedValue={that.state.manualBackupDestination}
-                                                                    >
-                                                                        <Radio label="Local" value="local" />
-                                                                        <Radio label="Amazon S3" value="s3" />
-                                                                    </RadioGroup>
-                                                                    {
-                                                                        that.state.manualBackupDestination == "local" &&
-                                                                            <FormGroup helperText="Path where to store backup" label="Path" labelFor="manual-local-path" requiredLabel={true}>
-                                                                                <input id="manual-local-path" className="pt-input pt-intent-primary" type="text" placeholder="Path" dir="auto" value={that.state.manualBackupPath} onChange={that.manualBackupPathChange.bind(that)} />
-                                                                            </FormGroup>
-                                                                        || that.state.manualBackupDestination == "s3" &&
-                                                                            <FormGroup helperText="S3 bucket to store backup in" label="Amazon S3 Bucket" labelFor="manual-s3-bucket" requiredLabel={true}>
-                                                                                <input id="manual-s3-bucket" className="pt-input pt-intent-primary" type="text" placeholder="Amazon S3 Bucket" dir="auto" value={that.state.manualBackupPath} onChange={that.manualBackupPathChange.bind(that)} />
-                                                                            </FormGroup>
-                                                                        || null
-                                                                    }
-                                                                    <Button text="Start backup" intent={ Intent.PRIMARY } onClick={that.performManualBackup.bind(that)} />
-                                                                </div>
-                                                            </Dialog>
                                                         </td>
                                                     </tr>
                                         })
                                     }
+                                    <Dialog
+                                        isOpen={that.state.isManualBackupOpen}
+                                        onClose={that.toggleManualBackup.bind(that)}
+                                        title="Manual backup"
+                                    >
+                                        <div style={{padding: "15px 15px 15px 15px"}}>
+                                            <RadioGroup
+                                                label="Backup destination"
+                                                onChange={that.manualBackupDestinationChange.bind(that)}
+                                                selectedValue={that.state.manualBackupDestination}
+                                            >
+                                                <Radio label="Local" value="local" />
+                                                <Radio label="Amazon S3" value="s3" />
+                                            </RadioGroup>
+                                            {
+                                                that.state.manualBackupDestination == "local" &&
+                                                <FormGroup helperText="Path where to store backup" label="Path" labelFor="manual-local-path" requiredLabel={true}>
+                                                    <input id="manual-local-path" className="pt-input pt-intent-primary" type="text" placeholder="Path" dir="auto" value={that.state.manualBackupPath} onChange={that.manualBackupPathChange.bind(that)} />
+                                                </FormGroup>
+                                                || that.state.manualBackupDestination == "s3" &&
+                                                <FormGroup helperText="S3 bucket to store backup in" label="Amazon S3 Bucket" labelFor="manual-s3-bucket" requiredLabel={true}>
+                                                    <input id="manual-s3-bucket" className="pt-input pt-intent-primary" type="text" placeholder="Amazon S3 Bucket" dir="auto" value={that.state.manualBackupPath} onChange={that.manualBackupPathChange.bind(that)} />
+                                                </FormGroup>
+                                                || null
+                                            }
+                                            <Button text="Start backup" intent={ Intent.PRIMARY } onClick={that.performManualBackup.bind(that)} />
+                                        </div>
+                                    </Dialog>
                                 </tbody>   
                                 : null
                             }
@@ -583,7 +598,9 @@ class Dashboard extends React.Component {
                                                             <td>{schedule.database.name}</td>
                                                             <td>{(schedule.destination.type == "local" && "Local: " || schedule.destination.type == "s3" && "Amazon S3: ") + (schedule.destination.path)}</td>
                                                             <td>{schedule.rule}</td>
-                                                            <td><Button text="Delete" intent={ Intent.DANGER } onClick={that.removeTask.bind(that, schedule._id)} /></td>
+                                                            <td>
+                                                                <Button text="Delete" intent={ Intent.DANGER } onClick={that.removeTask.bind(that, schedule._id)} />
+                                                            </td>
                                                         </tr>
                                             })
                                         }
@@ -602,21 +619,38 @@ class Dashboard extends React.Component {
                                     <th>Time</th>
                                     <th>Type</th>
                                     <th>Status</th>
+                                    <th>Log</th>
                                 </tr>
                             </thead>
                             {
                                 this.state.backups ?        
                                 <tbody>
                                     {
-                                        this.state.backups.map(function(backup) {
+                                        this.state.backups.map(function(backup, index) {
                                             return  <tr>
                                                         <td>{backup.database.name}</td>
                                                         <td>{(backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + (backup.destination.path)}</td>
                                                         <td>{new Date(backup.startDate).toISOString()}</td>
                                                         <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
                                                         <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "saving" && "Saving data" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag>{(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") ? <div style={{paddingTop: "10px"}}><ProgressBar className="db-backup-progress" intent={Intent.WARNING} value={backup.status == "queued" && 0 || backup.status == "progress" && 0.33 || backup.status == "saving" && 0.66 || backup.status == "finished" && 1} /></div> : null}</td>
+                                                        <td>
+                                                            <Button text="Log" intent={ Intent.PRIMARY } onClick={that.openLog.bind(that, index)} />
+                                                        </td>
                                                     </tr>
                                         })
+                                    }
+                                    {
+                                        (that.state.logIndex != null) ?
+                                        <Dialog
+                                            isOpen={that.state.isLogOpen}
+                                            onClose={that.toggleLogOpen.bind(that)}
+                                            title="Backup log"
+                                        >
+                                            <TextArea readOnly style={{height: "400px", margin: "15px 15px 0px 15px", resize: "none"}}>
+                                                {that.state.backups[that.state.logIndex].log}
+                                            </TextArea>
+                                        </Dialog>
+                                        : null
                                     }
                                 </tbody>
                                 : null
