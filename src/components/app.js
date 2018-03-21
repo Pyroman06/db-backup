@@ -12,7 +12,8 @@ class App extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            loading: true
+            loading: true,
+            setupComplete: true
         };
     }
 
@@ -37,7 +38,8 @@ class App extends React.Component {
                 });
             } else {
                 this.setState({
-                    loading: false
+                    loading: false,
+                    setupComplete: data.setupComplete
                 });
             }
         });
@@ -55,7 +57,9 @@ class App extends React.Component {
                 <div className="main-container">
                     <Header location={this.props.location} />
                     <Switch location={this.props.location}>
-                        <Route exact path='/' component={Home} />
+                        <Route exact path='/' render={(props) => (
+                            <Home setupComplete={this.state.setupComplete} />
+                        )} />
                         <Route exact path='/settings' component={Settings} />
                         <Route path='*' render={(props) => (
                             <Redirect to='/' push />

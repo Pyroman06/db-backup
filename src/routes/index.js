@@ -43,11 +43,55 @@ router.post('/getuser', function(req, res, next) {
             user: { username: req.user.username, email: req.user.email, group: req.user.group, isLoggedIn: true }
         });
     } else {
-        return res.json({
-            error: true,
-            message: "Session not found"
-        });
+        User.count({}, function(err, count) {
+            if (count == 0) {
+                return res.json({
+                    error: true,
+                    message: "Session not found",
+                    setupComplete: false
+                });
+            } else {
+                return res.json({
+                    error: true,
+                    message: "Session not found",
+                    setupComplete: true
+                });
+            }
+        })
     }
+})
+
+router.post('/createroot', function(req, res, next) {
+    User.count({}, function(err, count) {
+        if (err) {
+            res.json({
+                error: true,
+                message: "An internal error occurred"
+            });
+        } else {
+            if (req.body.username && req.body.password && typeof req.body.username == "string" && typeof req.body.password == "string" && req.body.username.length > 0 && req.body.password.length > 0) {
+                var root = new User({
+                    username: req.body.username,
+                    password: Bcrypt.hashSync(req.body.password, 10),
+                    group: "admin"
+                })
+
+                root.save(function(err) {
+                    if (err) {
+                        res.json({
+                            error: true,
+                            message: "An internal error occurred"
+                        });
+                    } else {
+                        res.json({
+                            error: false,
+                            message: "Root account was created"
+                        });
+                    }
+                })
+            }
+        }
+    })
 })
 
 router.post('/settings/get', function(req, res, next) {

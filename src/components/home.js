@@ -8,7 +8,7 @@ class Home extends React.Component {
         return (
             <div>
                 {
-                    this.props.User.isLoggedIn ? <Dashboard /> : <LoginForm />
+                    this.props.User.isLoggedIn ? <Dashboard /> : <LoginForm setupComplete={this.props.setupComplete} />
                 }
             </div>
         );
