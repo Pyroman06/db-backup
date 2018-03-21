@@ -63,7 +63,8 @@ export var BackupQueue = new Queue(function (input, cb) {
         });
     } else if (input.database.engine == "mysql") {
         const mysqldump = spawn( 'mysqldump', [ '--all-databases', '--user=' + input.database.options.username, '--password=' + input.database.options.password, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--verbose' ] );
-        var stderr, stdout = "";
+        var stderr = "";
+        var stdout = "";
         mysqldump.stdout.on('data', data => {
             stdout = stdout + data;
         });
