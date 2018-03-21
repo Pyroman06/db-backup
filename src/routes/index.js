@@ -200,17 +200,39 @@ router.post('/database/delete', function(req, res, next) {
                     });
                 } else {
                     if (database) {
-                        database.remove(function(err) {
+                        Scheduler.find({database: database._id}, function(err, schedules) {
                             if (err) {
                                 res.json({
                                     error: true,
                                     message: "An internal error occurred"
                                 });
                             } else {
-                                res.json({
-                                    error: false,
-                                    message: "Database was removed"
-                                });
+                                schedules.map(function(schedule) {
+                                    RemoveSchedule(schedule._id);
+                                })
+
+                                Scheduler.remove({database: database._id}, function(err) {
+                                    if (err) {
+                                        res.json({
+                                            error: true,
+                                            message: "An internal error occurred"
+                                        });
+                                    } else {
+                                        database.remove(function(err) {
+                                            if (err) {
+                                                res.json({
+                                                    error: true,
+                                                    message: "An internal error occurred"
+                                                });
+                                            } else {
+                                                res.json({
+                                                    error: false,
+                                                    message: "Database was removed"
+                                                });
+                                            }
+                                        });
+                                    }
+                                })
                             }
                         });
                     } else {

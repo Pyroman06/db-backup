@@ -7,7 +7,7 @@
     "dev": "nodemon ./src/server.js 4000 --exec babel-node",
     "start": "forever start ./dist/server.js 4000",
     "build": "babel src -d dist --presets env,react,stage-2",
-    "build-client": "node_modules/.bin/webpack"
+    "build-client": "node_modules/.bin/webpack -p"
   },
   "repository": {
     "type": "git",

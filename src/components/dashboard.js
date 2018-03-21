@@ -632,7 +632,7 @@ class Dashboard extends React.Component {
                                     {
                                         this.state.backups.map(function(backup, index) {
                                             return  <tr>
-                                                        <td>{backup.database.name}</td>
+                                                        <td>{backup.database && backup.database.name || "Removed"}</td>
                                                         <td>{(backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + (backup.destination.path)}</td>
                                                         <td>{new Date(backup.startDate).toLocaleString()}</td>
                                                         <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
