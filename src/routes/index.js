@@ -8,8 +8,10 @@ import Backup from '../models/backup';
 import Scheduler from '../models/scheduler';
 import Cron from 'node-cron';
 import { BackupQueue, AddSchedule, RemoveSchedule, InitData } from '../queue';
+import { AWSLoadConfig, AWSUpdateConfig } from '../aws';
 
 InitData();
+AWSLoadConfig();
 
 const router = new Router();
 
@@ -84,6 +86,7 @@ router.post('/settings/save', function(req, res, next) {
                         }
                     });
                 });
+                AWSUpdateConfig(req.body.accessKey, req.body.secretKey, req.body.region);
                 res.json({
                     error: false,
                     message: "Settings were saved"
@@ -322,7 +325,8 @@ router.post('/scheduler/add', function(req, res, next) {
                                     });
                                 } else {
                                     AddSchedule({
-                                        database: database, 
+                                        _id: newScheduler._id,
+                                        database: database,
                                         destination: newScheduler.destination, 
                                         rule: newScheduler.rule
                                     })

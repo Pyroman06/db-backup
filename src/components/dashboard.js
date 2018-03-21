@@ -419,7 +419,11 @@ class Dashboard extends React.Component {
     }
 
     componentWillMount() {
+        var that = this;
         this.getDashboard();
+        setInterval(function() {
+            that.getDashboard.bind(that)();
+        }, 10000)
     }
 
     render() {
@@ -630,9 +634,9 @@ class Dashboard extends React.Component {
                                             return  <tr>
                                                         <td>{backup.database.name}</td>
                                                         <td>{(backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + (backup.destination.path)}</td>
-                                                        <td>{new Date(backup.startDate).toISOString()}</td>
+                                                        <td>{new Date(backup.startDate).toLocaleString()}</td>
                                                         <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
-                                                        <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "saving" && "Saving data" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag>{(backup.status == "queued" || backup.status == "progress" || backup.status == "saving") ? <div style={{paddingTop: "10px"}}><ProgressBar className="db-backup-progress" intent={Intent.WARNING} value={backup.status == "queued" && 0 || backup.status == "progress" && 0.33 || backup.status == "saving" && 0.66 || backup.status == "finished" && 1} /></div> : null}</td>
+                                                        <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag></td>
                                                         <td>
                                                             <Button text="Log" intent={ Intent.PRIMARY } onClick={that.openLog.bind(that, index)} />
                                                         </td>
