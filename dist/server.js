@@ -36,7 +36,7 @@ var _bcrypt = require('bcrypt');
 
 var _bcrypt2 = _interopRequireDefault(_bcrypt);
 
-var _config = require('./config.json');
+var _config = require('../config.json');
 
 var _config2 = _interopRequireDefault(_config);
 

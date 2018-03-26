@@ -7,7 +7,7 @@ import CookieParser from 'cookie-parser';
 import Passport from 'passport';
 import PassportLocal from 'passport-local';
 import Bcrypt from 'bcrypt';
-import Config from './config.json';
+import Config from '../config.json';
 import Routes from './routes/index';
 import User from './models/user';
 
