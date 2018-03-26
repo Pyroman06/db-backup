@@ -67,9 +67,6 @@ Passport.deserializeUser(function(id, done) {
     });
 });
 
-
-
-
 //Hosting static assets
 app.use(Express.static(Path.join(__dirname, '..', 'public')));
 

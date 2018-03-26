@@ -4,7 +4,7 @@ class Footer extends React.Component {
     render() {
         return (
         <footer>
-            © Database Backup Tool by Aleksandr Stepantsov
+            Database Backup Tool
         </footer>
         );
     }

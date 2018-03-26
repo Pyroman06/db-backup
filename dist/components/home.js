@@ -43,7 +43,7 @@ var Home = function (_React$Component) {
             return _react2.default.createElement(
                 'div',
                 null,
-                this.props.User.isLoggedIn ? _react2.default.createElement(_dashboard2.default, null) : _react2.default.createElement(_loginform2.default, null)
+                this.props.User.isLoggedIn ? _react2.default.createElement(_dashboard2.default, null) : _react2.default.createElement(_loginform2.default, { setupComplete: this.props.setupComplete })
             );
         }
     }]);

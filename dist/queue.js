@@ -92,8 +92,8 @@ var BackupQueue = exports.BackupQueue = new _betterQueue2.default(function (inpu
         });
     } else if (input.database.engine == "mysql") {
         var mysqldump = spawn('mysqldump', ['--all-databases', '--user=' + input.database.options.username, '--password=' + input.database.options.password, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--verbose']);
-        var stderr,
-            stdout = "";
+        var stderr = "";
+        var stdout = "";
         mysqldump.stdout.on('data', function (data) {
             stdout = stdout + data;
         });

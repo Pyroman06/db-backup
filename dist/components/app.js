@@ -51,7 +51,8 @@ var App = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this, props));
 
         _this.state = {
-            loading: true
+            loading: true,
+            setupComplete: true
         };
         return _this;
     }
@@ -80,7 +81,8 @@ var App = function (_React$Component) {
                     });
                 } else {
                     _this2.setState({
-                        loading: false
+                        loading: false,
+                        setupComplete: data.setupComplete
                     });
                 }
             });
@@ -88,6 +90,8 @@ var App = function (_React$Component) {
     }, {
         key: 'render',
         value: function render() {
+            var _this3 = this;
+
             if (this.state.loading) {
                 return _react2.default.createElement(
                     'div',
@@ -102,7 +106,9 @@ var App = function (_React$Component) {
                     _react2.default.createElement(
                         _reactRouterDom.Switch,
                         { location: this.props.location },
-                        _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _home2.default }),
+                        _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', render: function render(props) {
+                                return _react2.default.createElement(_home2.default, { setupComplete: _this3.state.setupComplete });
+                            } }),
                         _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/settings', component: _settings2.default }),
                         _react2.default.createElement(_reactRouterDom.Route, { path: '*', render: function render(props) {
                                 return _react2.default.createElement(_reactRouterDom.Redirect, { to: '/', push: true });

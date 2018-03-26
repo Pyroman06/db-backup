@@ -83,11 +83,55 @@ router.post('/getuser', function (req, res, next) {
             user: { username: req.user.username, email: req.user.email, group: req.user.group, isLoggedIn: true }
         });
     } else {
-        return res.json({
-            error: true,
-            message: "Session not found"
+        _user2.default.count({}, function (err, count) {
+            if (count == 0) {
+                return res.json({
+                    error: true,
+                    message: "Session not found",
+                    setupComplete: false
+                });
+            } else {
+                return res.json({
+                    error: true,
+                    message: "Session not found",
+                    setupComplete: true
+                });
+            }
         });
     }
+});
+
+router.post('/createroot', function (req, res, next) {
+    _user2.default.count({}, function (err, count) {
+        if (err) {
+            res.json({
+                error: true,
+                message: "An internal error occurred"
+            });
+        } else {
+            if (req.body.username && req.body.password && typeof req.body.username == "string" && typeof req.body.password == "string" && req.body.username.length > 0 && req.body.password.length > 0) {
+                var root = new _user2.default({
+                    username: req.body.username,
+                    password: _bcrypt2.default.hashSync(req.body.password, 10),
+                    group: "admin"
+                });
+
+                root.save(function (err) {
+                    if (err) {
+                        res.json({
+                            error: true,
+                            message: "An internal error occurred"
+                        });
+                    } else {
+                        res.json({
+                            error: false,
+                            message: "Root account was created"
+                        });
+                    }
+                });
+            }
+        }
+    });
 });
 
 router.post('/settings/get', function (req, res, next) {

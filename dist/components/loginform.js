@@ -42,7 +42,11 @@ var LoginForm = function (_React$Component) {
             rememberMe: false,
             loginDisabled: false,
             error: null,
-            isErrorOpen: false
+            isErrorOpen: false,
+            isCreateRootOpen: false,
+            rootUsername: "",
+            rootPassword: "",
+            createRootDisabled: false
         };
         return _this;
     }
@@ -69,9 +73,73 @@ var LoginForm = function (_React$Component) {
             });
         }
     }, {
+        key: 'rootUsernameChange',
+        value: function rootUsernameChange(e) {
+            this.setState({
+                rootUsername: e.target.value
+            });
+        }
+    }, {
+        key: 'rootPasswordChange',
+        value: function rootPasswordChange(e) {
+            this.setState({
+                rootPassword: e.target.value
+            });
+        }
+    }, {
+        key: 'toggleCreateRoot',
+        value: function toggleCreateRoot() {
+            this.setState({
+                isCreateRootOpen: !this.state.isCreateRootOpen
+            });
+        }
+    }, {
+        key: 'createRoot',
+        value: function createRoot() {
+            var _this2 = this;
+
+            this.setState({
+                createRootDisabled: true
+            });
+
+            fetch('/api/createroot', {
+                credentials: 'same-origin',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: this.state.rootUsername,
+                    password: this.state.rootPassword
+                })
+            }).then(function (response) {
+                if (!response.ok) {
+                    _toaster.AppToaster.show({ message: response.statusText, intent: _core.Intent.DANGER });
+                }
+
+                return response;
+            }).then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                if (!data.error) {
+                    _toaster.AppToaster.show({ message: "Account was registered, login now.", intent: _core.Intent.SUCCESS });
+                } else {
+                    _this2.setState({
+                        createRootDisabled: false
+                    });
+                    _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.DANGER });
+                }
+            }).catch(function (err) {
+                _this2.setState({
+                    createRootDisabled: false
+                });
+                _toaster.AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: _core.Intent.DANGER });
+            });
+        }
+    }, {
         key: 'login',
         value: function login() {
-            var _this2 = this;
+            var _this3 = this;
 
             this.setState({
                 loginDisabled: true
@@ -98,10 +166,10 @@ var LoginForm = function (_React$Component) {
                 return response.json();
             }).then(function (data) {
                 if (!data.error) {
-                    _this2.props.SetUser(data.user);
+                    _this3.props.SetUser(data.user);
                     _toaster.AppToaster.show({ message: "You have logged in as " + data.user.username, intent: _core.Intent.SUCCESS });
                 } else {
-                    _this2.setState({
+                    _this3.setState({
                         error: data.message,
                         loginDisabled: false,
                         isErrorOpen: true
@@ -109,7 +177,7 @@ var LoginForm = function (_React$Component) {
                     _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.DANGER });
                 }
             }).catch(function (err) {
-                _this2.setState({
+                _this3.setState({
                     error: "Something went wrong. Please, try again later.",
                     loginDisabled: false,
                     isErrorOpen: true
@@ -162,9 +230,48 @@ var LoginForm = function (_React$Component) {
                                 { className: 'text-left', labelFor: 'db-password', label: 'Password' },
                                 _react2.default.createElement('input', { id: 'db-password', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'password', placeholder: 'Password', dir: 'auto', onChange: this.passwordChange.bind(this) })
                             ),
-                            _react2.default.createElement(_core.Switch, { className: 'pt-large', checked: this.state.rememberMe, label: 'Remember me', inline: true, onChange: this.rememberMeChange.bind(this) }),
-                            _react2.default.createElement('br', null),
-                            _react2.default.createElement(_core.Button, { text: 'Login', className: 'pt-large pt-fill', loading: this.state.loginDisabled, onClick: this.login.bind(this) })
+                            _react2.default.createElement(
+                                'div',
+                                null,
+                                _react2.default.createElement(_core.Switch, { className: 'pt-large', checked: this.state.rememberMe, label: 'Remember me', inline: true, onChange: this.rememberMeChange.bind(this) })
+                            ),
+                            _react2.default.createElement(
+                                'div',
+                                null,
+                                _react2.default.createElement(_core.Button, { text: 'Login', className: 'pt-large pt-fill', loading: this.state.loginDisabled, onClick: this.login.bind(this) })
+                            ),
+                            !this.props.setupComplete && !this.state.createRootDisabled ? _react2.default.createElement(
+                                'div',
+                                { style: { marginTop: "15px" } },
+                                _react2.default.createElement(_core.Button, { text: 'Setup is incomplete. Click here to create a root account.', className: 'pt-large pt-minimal', intent: _core.Intent.WARNING, onClick: this.toggleCreateRoot.bind(this) }),
+                                _react2.default.createElement(
+                                    _core.Dialog,
+                                    {
+                                        isOpen: this.state.isCreateRootOpen,
+                                        onClose: this.toggleCreateRoot.bind(this),
+                                        title: 'Create root account'
+                                    },
+                                    _react2.default.createElement(
+                                        'div',
+                                        { style: { margin: "15px 15px 0px 15px" } },
+                                        _react2.default.createElement(
+                                            _core.FormGroup,
+                                            { className: 'text-left', labelFor: 'db-create-login', label: 'Root username' },
+                                            _react2.default.createElement('input', { id: 'db-create-login', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'text', placeholder: 'Root username', dir: 'auto', onChange: this.rootUsernameChange.bind(this) })
+                                        ),
+                                        _react2.default.createElement(
+                                            _core.FormGroup,
+                                            { className: 'text-left', labelFor: 'db-create-password', label: 'Root password' },
+                                            _react2.default.createElement('input', { id: 'db-create-password', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'password', placeholder: 'Root password', dir: 'auto', onChange: this.rootPasswordChange.bind(this) })
+                                        ),
+                                        _react2.default.createElement(
+                                            'div',
+                                            null,
+                                            _react2.default.createElement(_core.Button, { text: 'Create root account', className: 'pt-large pt-fill', loading: this.state.createRootDisabled, onClick: this.createRoot.bind(this) })
+                                        )
+                                    )
+                                )
+                            ) : null
                         )
                     )
                 )

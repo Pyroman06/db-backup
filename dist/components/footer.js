@@ -33,7 +33,7 @@ var Footer = function (_React$Component) {
             return _react2.default.createElement(
                 'footer',
                 null,
-                '\xA9 Database Backup Tool by Aleksandr Stepantsov'
+                'Database Backup Tool'
             );
         }
     }]);
