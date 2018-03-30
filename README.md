@@ -1,5 +1,5 @@
 # db-backup
-Web-based MySQL/MongoDB database backup tool created with Node.js and React
+Web-based MySQL/MongoDB database backup tool created with Node.js and React. Supports both local and cloud (Amazon S3) backups.
 ## Requirements
 The following requirements must be met in order to run this application:
 - forever
