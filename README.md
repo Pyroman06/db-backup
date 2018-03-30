@@ -3,12 +3,10 @@ Web-based MySQL/MongoDB database backup tool created with Node.js and React
 ## Requirements
 The following requirements must be met in order to run this application:
 - forever
-Forever is being used to run a production server
 ``` bash
 npm install -g forever
 ```
 - nodemon (only for development server)
-Nodemon is being used to run development server
 ``` bash
 npm install -g nodemon
 ```
