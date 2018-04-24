@@ -14,8 +14,6 @@ var _reactRedux = require('react-redux');
 
 var _core = require('@blueprintjs/core');
 
-var _reactBootstrap = require('react-bootstrap');
-
 var _user = require('../actions/user');
 
 var _toaster = require('./toaster');
@@ -215,7 +213,7 @@ var LoginForm = function (_React$Component) {
                     'div',
                     { className: 'db-flex-row-item' },
                     _react2.default.createElement(
-                        _reactBootstrap.Form,
+                        'form',
                         { className: 'db-login-form' },
                         _react2.default.createElement(
                             'div',

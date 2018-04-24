@@ -1,6 +1,5 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
-import { Form } from 'react-bootstrap';
 import { Button, Intent, Spinner, FormGroup } from '@blueprintjs/core';
 import { AppToaster } from './toaster';
 import { connect } from 'react-redux';
@@ -134,7 +133,7 @@ class Settings extends React.Component {
             } else {
                 return (
                 <div className="db-settings">
-                    <Form>
+                    <form>
                         <FormGroup helperText="Region of your Amazon S3 bucket" label="Amazon S3 Region" labelFor="region-input">
                             <input id="region-input" className="pt-input pt-intent-primary pt-large pt-fill" type="text" placeholder="Amazon S3 Region" dir="auto" value={this.state.region} onChange={this.regionChange.bind(this)} />
                         </FormGroup>
@@ -145,7 +144,7 @@ class Settings extends React.Component {
                             <input id="secret-key-input" className="pt-input pt-intent-primary pt-large pt-fill" type="password" placeholder="Amazon IAM Secret Key" dir="auto" value={this.state.secretKey} onChange={this.secretKeyChange.bind(this)} />
                         </FormGroup>
                         <Button text="Save" intent={ Intent.PRIMARY } className="pt-large" onClick={this.saveSettings.bind(this)} />
-                    </Form>
+                    </form>
                 </div>
                 );
             }

@@ -12,8 +12,6 @@ var _react2 = _interopRequireDefault(_react);
 
 var _reactRouterDom = require('react-router-dom');
 
-var _reactBootstrap = require('react-bootstrap');
-
 var _core = require('@blueprintjs/core');
 
 var _toaster = require('./toaster');
@@ -173,7 +171,7 @@ var Settings = function (_React$Component) {
                         'div',
                         { className: 'db-settings' },
                         _react2.default.createElement(
-                            _reactBootstrap.Form,
+                            'form',
                             null,
                             _react2.default.createElement(
                                 _core.FormGroup,

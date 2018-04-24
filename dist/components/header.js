@@ -14,8 +14,6 @@ var _reactRedux = require('react-redux');
 
 var _reactRouterDom = require('react-router-dom');
 
-var _reactBootstrap = require('react-bootstrap');
-
 var _reactRouterBootstrap = require('react-router-bootstrap');
 
 var _user = require('../actions/user');
@@ -31,6 +29,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var loggedInCategories = [{ name: "Dashboard", path: "/" }, { name: "Settings", path: "/settings" }];
+var notLoggedInCategories = [{ name: "Home", path: "/" }];
 
 var Header = function (_React$Component) {
     _inherits(Header, _React$Component);
@@ -71,79 +72,39 @@ var Header = function (_React$Component) {
                 'header',
                 null,
                 _react2.default.createElement(
-                    _reactBootstrap.Navbar,
-                    { inverse: true, collapseOnSelect: true },
+                    _core.Navbar,
+                    { className: 'pt-dark' },
                     _react2.default.createElement(
-                        _reactBootstrap.Navbar.Header,
-                        null,
+                        _core.NavbarGroup,
+                        { align: _core.Alignment.LEFT },
                         _react2.default.createElement(
-                            _reactBootstrap.Navbar.Brand,
+                            _core.NavbarHeading,
                             null,
                             _react2.default.createElement(
                                 _reactRouterDom.Link,
-                                { to: '/' },
+                                { className: 'db-link-white', to: '/' },
                                 'Database Backup'
                             )
                         ),
-                        _react2.default.createElement(_reactBootstrap.Navbar.Toggle, null)
+                        (this.props.User.isLoggedIn ? loggedInCategories : notLoggedInCategories).map(function (category) {
+                            return _react2.default.createElement(
+                                _reactRouterDom.Link,
+                                { className: 'db-link-white', to: category.path },
+                                _react2.default.createElement(_core.Button, { className: 'pt-minimal', text: category.name })
+                            );
+                        })
                     ),
                     this.props.User.isLoggedIn ? _react2.default.createElement(
-                        _reactBootstrap.Navbar.Collapse,
-                        null,
+                        _core.NavbarGroup,
+                        { align: _core.Alignment.RIGHT },
                         _react2.default.createElement(
-                            _reactBootstrap.Nav,
-                            null,
-                            _react2.default.createElement(
-                                _reactRouterBootstrap.LinkContainer,
-                                { exact: true, to: '/' },
-                                _react2.default.createElement(
-                                    _reactBootstrap.NavItem,
-                                    { eventKey: 1 },
-                                    'Dashboard'
-                                )
-                            ),
-                            _react2.default.createElement(
-                                _reactRouterBootstrap.LinkContainer,
-                                { to: '/settings' },
-                                _react2.default.createElement(
-                                    _reactBootstrap.NavItem,
-                                    { eventKey: 2 },
-                                    'Settings'
-                                )
-                            )
-                        ),
-                        _react2.default.createElement(
-                            _reactBootstrap.Nav,
-                            { pullRight: true },
-                            _react2.default.createElement(
-                                _reactBootstrap.NavItem,
-                                { eventKey: 1, onClick: this.logout.bind(this) },
-                                'Logout'
-                            )
-                        ),
-                        _react2.default.createElement(
-                            _reactBootstrap.Navbar.Text,
-                            { pullRight: true },
+                            _core.Tag,
+                            { className: 'db-margin-right', minimal: true },
                             'Logged in as ',
                             this.props.User.username
-                        )
-                    ) : _react2.default.createElement(
-                        _reactBootstrap.Navbar.Collapse,
-                        null,
-                        _react2.default.createElement(
-                            _reactBootstrap.Nav,
-                            null,
-                            _react2.default.createElement(
-                                _reactRouterBootstrap.LinkContainer,
-                                { to: '/' },
-                                _react2.default.createElement(
-                                    _reactBootstrap.NavItem,
-                                    { eventKey: 1 },
-                                    'Home'
-                                )
-                            )
-                        )
-                    )
+                        ),
+                        _react2.default.createElement(_core.Button, { className: 'pt-minimal', text: 'Logout', intent: _core.Intent.DANGER, icon: 'log-out', onClick: this.logout.bind(this) })
+                    ) : null
                 )
             );
         }

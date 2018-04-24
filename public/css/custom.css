@@ -4,14 +4,19 @@ body {
     min-height: 100vh;
 }
 
+header {
+    margin-bottom: 15px;
+    min-width: 530px;
+}
+
 footer {
-    color: #FFF;
+    color: #f5f8fa;
     text-align: center;
     font-size: 75%;
     position: absolute;
     bottom: 0;
     width: 100%;
-    background: #10161A;
+    background-color: #394b59;
     display: flex;
     padding: 15px 0px 15px 0px;
     height: 44px;
@@ -102,4 +107,20 @@ input {
 
 .db-dashboard {
     margin-left: 15px;
+}
+
+.db-link-white {
+    color: #f5f8fa !important;
+}
+
+.db-link-white:hover {
+    text-decoration: none;
+}
+
+.db-link-white:focus {
+    text-decoration: none;
+}
+
+.db-margin-right {
+    margin-right: 15px;
 }

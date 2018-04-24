@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Button, Switch, Intent, FormGroup, Dialog } from '@blueprintjs/core';
-import { Form } from 'react-bootstrap';
 import { SetUser } from '../actions/user';
 import { AppToaster } from './toaster';
 
@@ -165,7 +164,7 @@ class LoginForm extends React.Component {
                     Forgot your password? Contact your administrator to reset it.
                 </div>
                 <div className="db-flex-row-item">
-                    <Form className="db-login-form">
+                    <form className="db-login-form">
                         <div className="db-login-form-container">
                             <FormGroup className="text-left" labelFor="db-login" label="Username">
                                 <input id="db-login" className="pt-input pt-intent-primary pt-large pt-fill" type="text" placeholder="Username" dir="auto" onChange={this.usernameChange.bind(this)} />
@@ -204,7 +203,7 @@ class LoginForm extends React.Component {
                                     : null
                                 }
                         </div>
-                    </Form>
+                    </form>
                 </div>
             </div>
         );
