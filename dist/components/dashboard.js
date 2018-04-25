@@ -4,6 +4,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = require('react');
@@ -14,7 +16,13 @@ var _core = require('@blueprintjs/core');
 
 var _toaster = require('./toaster');
 
+var _client = require('../providers/client');
+
+var _client2 = _interopRequireDefault(_client);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -32,13 +40,13 @@ var Dashboard = function (_React$Component) {
 
         _this.state = {
             isAddDatabaseOpen: false,
-            databaseName: "",
-            databaseEngine: "mysql",
-            databaseHostname: "",
-            databasePort: "",
-            databaseUsername: "",
-            databasePassword: "",
-            databaseUri: "",
+            name: "",
+            engine: "mysql",
+            hostname: "",
+            port: "",
+            username: "",
+            password: "",
+            uri: "",
             addDatabaseDisabled: false,
             error: false,
             loading: true,
@@ -209,53 +217,9 @@ var Dashboard = function (_React$Component) {
             });
         }
     }, {
-        key: 'databaseNameChange',
-        value: function databaseNameChange(e) {
-            this.setState({
-                databaseName: e.target.value
-            });
-        }
-    }, {
-        key: 'databaseEngineChange',
-        value: function databaseEngineChange(e) {
-            this.setState({
-                databaseEngine: e.target.value
-            });
-        }
-    }, {
-        key: 'databaseHostnameChange',
-        value: function databaseHostnameChange(e) {
-            this.setState({
-                databaseHostname: e.target.value
-            });
-        }
-    }, {
-        key: 'databasePortChange',
-        value: function databasePortChange(e) {
-            this.setState({
-                databasePort: e.target.value
-            });
-        }
-    }, {
-        key: 'databaseUsernameChange',
-        value: function databaseUsernameChange(e) {
-            this.setState({
-                databaseUsername: e.target.value
-            });
-        }
-    }, {
-        key: 'databasePasswordChange',
-        value: function databasePasswordChange(e) {
-            this.setState({
-                databasePassword: e.target.value
-            });
-        }
-    }, {
-        key: 'databaseUriChange',
-        value: function databaseUriChange(e) {
-            this.setState({
-                databaseUri: e.target.value
-            });
+        key: 'databaseOptionChange',
+        value: function databaseOptionChange(option, e) {
+            this.setState(_defineProperty({}, option, e.target.value));
         }
     }, {
         key: 'addDatabase',
@@ -266,12 +230,11 @@ var Dashboard = function (_React$Component) {
                 addDatabaseDisabled: true
             });
 
-            var data = {};
-            if (this.state.databaseEngine == "mysql") {
-                data = { name: this.state.databaseName, engine: this.state.databaseEngine, hostname: this.state.databaseHostname, port: this.state.databasePort, username: this.state.databaseUsername, password: this.state.databasePassword };
-            } else if (this.state.databaseEngine == "mongodb") {
-                data = { name: this.state.databaseName, engine: this.state.databaseEngine, uri: this.state.databaseUri };
-            }
+            var data = { engine: this.state.engine, name: this.state.name };
+            var that = this;
+            Object.keys(_client2.default.engines[this.state.engine].fields).map(function (key) {
+                data = _extends({}, data, _defineProperty({}, key, that.state[key]));
+            });
 
             fetch('/api/database/add', {
                 credentials: 'same-origin',
@@ -297,13 +260,13 @@ var Dashboard = function (_React$Component) {
                     _this5.setState({
                         isAddDatabaseOpen: false,
                         addDatabaseDisabled: false,
-                        databaseName: "",
-                        databaseEngine: "mysql",
-                        databaseHostname: "",
-                        databasePort: "",
-                        databaseUsername: "",
-                        databasePassword: "",
-                        databaseUri: ""
+                        name: "",
+                        engine: "mysql",
+                        hostname: "",
+                        port: "",
+                        username: "",
+                        password: "",
+                        uri: ""
                     });
                     _this5.getDashboard();
                 } else {
@@ -510,50 +473,27 @@ var Dashboard = function (_React$Component) {
                                 _react2.default.createElement(
                                     _core.FormGroup,
                                     { helperText: 'Choose a name for new database to be able to distinguish it from others', label: 'Name', labelFor: 'database-name', requiredLabel: true },
-                                    _react2.default.createElement('input', { id: 'database-name', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Name', dir: 'auto', value: this.state.databaseName, onChange: this.databaseNameChange.bind(this) })
+                                    _react2.default.createElement('input', { id: 'database-name', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Name', dir: 'auto', value: this.state.name, onChange: this.databaseOptionChange.bind(this, 'name') })
                                 ),
                                 _react2.default.createElement(
                                     _core.RadioGroup,
                                     {
                                         label: 'Database engine',
-                                        onChange: this.databaseEngineChange.bind(this),
-                                        selectedValue: this.state.databaseEngine
+                                        onChange: this.databaseOptionChange.bind(this, 'engine'),
+                                        selectedValue: this.state.engine
                                     },
-                                    _react2.default.createElement(_core.Radio, { label: 'MySQL', value: 'mysql' }),
-                                    _react2.default.createElement(_core.Radio, { label: 'MongoDB', value: 'mongodb' })
+                                    Object.keys(_client2.default.engines).map(function (key) {
+                                        return _react2.default.createElement(_core.Radio, { label: _client2.default.engines[key].name, value: key });
+                                    })
                                 ),
-                                this.state.databaseEngine == "mysql" && _react2.default.createElement(
-                                    'div',
-                                    null,
-                                    _react2.default.createElement(
+                                Object.keys(_client2.default.engines[this.state.engine].fields).map(function (key) {
+                                    var field = _client2.default.engines[that.state.engine].fields[key];
+                                    return _react2.default.createElement(
                                         _core.FormGroup,
-                                        { helperText: 'Hostname of your database', label: 'Hostname', labelFor: 'database-hostname', requiredLabel: true },
-                                        _react2.default.createElement('input', { id: 'database-hostname', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Hostname', dir: 'auto', value: this.state.databaseHostname, onChange: this.databaseHostnameChange.bind(this) })
-                                    ),
-                                    _react2.default.createElement(
-                                        _core.FormGroup,
-                                        { helperText: 'Port of your database', label: 'Port', labelFor: 'database-port', requiredLabel: true },
-                                        _react2.default.createElement('input', { id: 'database-port', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Port', dir: 'auto', value: this.state.databasePort, onChange: this.databasePortChange.bind(this) })
-                                    ),
-                                    _react2.default.createElement(
-                                        _core.FormGroup,
-                                        { helperText: 'Username for your database', label: 'Username', labelFor: 'database-username', requiredLabel: true },
-                                        _react2.default.createElement('input', { id: 'database-username', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Username', dir: 'auto', value: this.state.databaseUsername, onChange: this.databaseUsernameChange.bind(this) })
-                                    ),
-                                    _react2.default.createElement(
-                                        _core.FormGroup,
-                                        { helperText: 'Password for your database', label: 'Password', labelFor: 'database-password', requiredLabel: true },
-                                        _react2.default.createElement('input', { id: 'database-password', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Password', dir: 'auto', value: this.state.databasePassword, onChange: this.databasePasswordChange.bind(this) })
-                                    )
-                                ) || this.state.databaseEngine == "mongodb" && _react2.default.createElement(
-                                    'div',
-                                    null,
-                                    _react2.default.createElement(
-                                        _core.FormGroup,
-                                        { helperText: 'Connection string for your MongoDB database', label: 'Connection string', labelFor: 'database-uri', requiredLabel: true },
-                                        _react2.default.createElement('input', { id: 'database-uri', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Connection string', dir: 'auto', value: this.state.databaseUri, onChange: this.databaseUriChange.bind(this) })
-                                    )
-                                ),
+                                        { helperText: field.description, label: field.name, labelFor: 'database-' + key, requiredLabel: true },
+                                        _react2.default.createElement('input', { id: 'database-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state[key], onChange: that.databaseOptionChange.bind(that, key) })
+                                    );
+                                }),
                                 _react2.default.createElement(_core.Button, { text: 'Add', intent: _core.Intent.PRIMARY, className: 'pt-large', loading: this.state.addDatabaseDisabled, onClick: this.addDatabase.bind(this) })
                             )
                         ),
@@ -603,41 +543,21 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            database.engine == "mysql" && "MySQL" || database.engine == "mongodb" && "MongoDB"
+                                            _client2.default.engines[database.engine].name
                                         ),
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            database.options.uri ? _react2.default.createElement(
-                                                'div',
-                                                null,
-                                                'Connection string: ',
-                                                database.options.uri
-                                            ) : null,
-                                            database.options.hostname ? _react2.default.createElement(
-                                                'div',
-                                                null,
-                                                'Hostname: ',
-                                                database.options.hostname
-                                            ) : null,
-                                            database.options.port ? _react2.default.createElement(
-                                                'div',
-                                                null,
-                                                'Port: ',
-                                                database.options.port
-                                            ) : null,
-                                            database.options.username ? _react2.default.createElement(
-                                                'div',
-                                                null,
-                                                'Username: ',
-                                                database.options.username
-                                            ) : null,
-                                            database.options.password ? _react2.default.createElement(
-                                                'div',
-                                                null,
-                                                'Password: ',
-                                                database.options.password
-                                            ) : null
+                                            Object.keys(_client2.default.engines[database.engine].fields).map(function (key) {
+                                                var field = _client2.default.engines[database.engine].fields[key];
+                                                return _react2.default.createElement(
+                                                    'div',
+                                                    null,
+                                                    field.name,
+                                                    ': ',
+                                                    database.options[key]
+                                                );
+                                            })
                                         ),
                                         _react2.default.createElement(
                                             'td',

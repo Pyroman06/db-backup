@@ -1,19 +1,20 @@
 import React from 'react';
 import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea } from '@blueprintjs/core';
 import { AppToaster } from './toaster';
+import Providers from '../providers/client';
 
 class Dashboard extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
             isAddDatabaseOpen: false,
-            databaseName: "",
-            databaseEngine: "mysql",
-            databaseHostname: "",
-            databasePort: "",
-            databaseUsername: "",
-            databasePassword: "",
-            databaseUri: "",
+            name: "",
+            engine: "mysql",
+            hostname: "",
+            port: "",
+            username: "",
+            password: "",
+            uri: "",
             addDatabaseDisabled: false,
             error: false,
             loading: true,
@@ -178,45 +179,9 @@ class Dashboard extends React.Component {
         });
     }
 
-    databaseNameChange(e) {
+    databaseOptionChange(option, e) {
         this.setState({
-            databaseName: e.target.value
-        });
-    }
-
-    databaseEngineChange(e) {
-        this.setState({
-            databaseEngine: e.target.value
-        });
-    }
-
-    databaseHostnameChange(e) {
-        this.setState({
-            databaseHostname: e.target.value
-        });
-    }
-
-    databasePortChange(e) {
-        this.setState({
-            databasePort: e.target.value
-        });
-    }
-
-    databaseUsernameChange(e) {
-        this.setState({
-            databaseUsername: e.target.value
-        });
-    }
-
-    databasePasswordChange(e) {
-        this.setState({
-            databasePassword: e.target.value
-        });
-    }
-
-    databaseUriChange(e) {
-        this.setState({
-            databaseUri: e.target.value
+            [option]: e.target.value
         });
     }
 
@@ -225,12 +190,11 @@ class Dashboard extends React.Component {
             addDatabaseDisabled: true
         });
 
-        var data = {};
-        if (this.state.databaseEngine == "mysql") {
-            data = {name: this.state.databaseName, engine: this.state.databaseEngine, hostname: this.state.databaseHostname, port: this.state.databasePort, username: this.state.databaseUsername, password: this.state.databasePassword}
-        } else if (this.state.databaseEngine == "mongodb") {
-            data = {name: this.state.databaseName, engine: this.state.databaseEngine, uri: this.state.databaseUri}
-        }
+        var data = { engine: this.state.engine, name: this.state.name };
+        var that = this;
+        Object.keys(Providers.engines[this.state.engine].fields).map(function(key) {
+            data = {...data, [key]: that.state[key]}
+        });
 
         fetch('/api/database/add', {
             credentials: 'same-origin',
@@ -257,13 +221,13 @@ class Dashboard extends React.Component {
                 this.setState({
                     isAddDatabaseOpen: false,
                     addDatabaseDisabled: false,
-                    databaseName: "",
-                    databaseEngine: "mysql",
-                    databaseHostname: "",
-                    databasePort: "",
-                    databaseUsername: "",
-                    databasePassword: "",
-                    databaseUri: ""
+                    name: "",
+                    engine: "mysql",
+                    hostname: "",
+                    port: "",
+                    username: "",
+                    password: "",
+                    uri: ""
                 });
                 this.getDashboard();
             } else {
@@ -443,38 +407,26 @@ class Dashboard extends React.Component {
                         <Collapse isOpen={this.state.isAddDatabaseOpen}>
                             <div className="db-form-default" style={{marginTop: "15px"}}>
                                 <FormGroup helperText="Choose a name for new database to be able to distinguish it from others" label="Name" labelFor="database-name" requiredLabel={true}>
-                                    <input id="database-name" className="pt-input pt-intent-primary" type="text" placeholder="Name" dir="auto" value={this.state.databaseName} onChange={this.databaseNameChange.bind(this)} />
+                                    <input id="database-name" className="pt-input pt-intent-primary" type="text" placeholder="Name" dir="auto" value={this.state.name} onChange={this.databaseOptionChange.bind(this, 'name')} />
                                 </FormGroup>
                                 <RadioGroup
                                     label="Database engine"
-                                    onChange={this.databaseEngineChange.bind(this)}
-                                    selectedValue={this.state.databaseEngine}
+                                    onChange={this.databaseOptionChange.bind(this, 'engine')}
+                                    selectedValue={this.state.engine}
                                 >
-                                    <Radio label="MySQL" value="mysql" />
-                                    <Radio label="MongoDB" value="mongodb" />
+                                    {
+                                        Object.keys(Providers.engines).map(function(key) {
+                                            return <Radio label={ Providers.engines[key].name } value={ key } />
+                                        })
+                                    }
                                 </RadioGroup>
                                 {
-                                    this.state.databaseEngine == "mysql" &&
-                                    <div>
-                                        <FormGroup helperText="Hostname of your database" label="Hostname" labelFor="database-hostname" requiredLabel={true}>
-                                            <input id="database-hostname" className="pt-input pt-intent-primary" type="text" placeholder="Hostname" dir="auto" value={this.state.databaseHostname} onChange={this.databaseHostnameChange.bind(this)} />
-                                        </FormGroup>
-                                        <FormGroup helperText="Port of your database" label="Port" labelFor="database-port" requiredLabel={true}>
-                                            <input id="database-port" className="pt-input pt-intent-primary" type="text" placeholder="Port" dir="auto" value={this.state.databasePort} onChange={this.databasePortChange.bind(this)} />
-                                        </FormGroup>
-                                        <FormGroup helperText="Username for your database" label="Username" labelFor="database-username" requiredLabel={true}>
-                                            <input id="database-username" className="pt-input pt-intent-primary" type="text" placeholder="Username" dir="auto" value={this.state.databaseUsername} onChange={this.databaseUsernameChange.bind(this)} />
-                                        </FormGroup>
-                                        <FormGroup helperText="Password for your database" label="Password" labelFor="database-password" requiredLabel={true}>
-                                            <input id="database-password" className="pt-input pt-intent-primary" type="text" placeholder="Password" dir="auto" value={this.state.databasePassword} onChange={this.databasePasswordChange.bind(this)} />
-                                        </FormGroup>
-                                    </div>
-                                    || this.state.databaseEngine == "mongodb" &&
-                                    <div>
-                                        <FormGroup helperText="Connection string for your MongoDB database" label="Connection string" labelFor="database-uri" requiredLabel={true}>
-                                            <input id="database-uri" className="pt-input pt-intent-primary" type="text" placeholder="Connection string" dir="auto" value={this.state.databaseUri} onChange={this.databaseUriChange.bind(this)} />
-                                        </FormGroup>
-                                    </div>
+                                    Object.keys(Providers.engines[this.state.engine].fields).map(function(key) {
+                                        let field = Providers.engines[that.state.engine].fields[key];
+                                        return  <FormGroup helperText={ field.description } label={ field.name } labelFor={`database-${key}`} requiredLabel={ true }>
+                                                    <input id={`database-${key}`} className="pt-input pt-intent-primary" type="text" placeholder={ field.name } dir="auto" value={that.state[key]} onChange={that.databaseOptionChange.bind(that, key)} />
+                                                </FormGroup>
+                                    })
                                 }
                                 <Button text="Add" intent={ Intent.PRIMARY } className="pt-large" loading={this.state.addDatabaseDisabled} onClick={this.addDatabase.bind(this)} />
                             </div>
@@ -495,13 +447,14 @@ class Dashboard extends React.Component {
                                         this.state.databases.map(function(database) {
                                             return  <tr>
                                                         <td>{database.name}</td>
-                                                        <td>{database.engine == "mysql" && "MySQL" || database.engine == "mongodb" && "MongoDB"}</td>
+                                                        <td>{Providers.engines[database.engine].name}</td>
                                                         <td>
-                                                            {database.options.uri ? (<div>Connection string: {database.options.uri}</div>) : null}
-                                                            {database.options.hostname ? (<div>Hostname: {database.options.hostname}</div>) : null}
-                                                            {database.options.port ? (<div>Port: {database.options.port}</div>) : null}
-                                                            {database.options.username ? (<div>Username: {database.options.username}</div>) : null}
-                                                            {database.options.password ? (<div>Password: {database.options.password}</div>) : null}
+                                                            {
+                                                                Object.keys(Providers.engines[database.engine].fields).map(function(key) {
+                                                                    var field = Providers.engines[database.engine].fields[key];
+                                                                    return <div>{ field.name }: {database.options[key]}</div>
+                                                                })
+                                                            }
                                                         </td>
                                                         <td>
                                                             <Popover content={<Menu><MenuItem icon="floppy-disk" onClick={that.manualBackup.bind(that, database._id)} text="Manual backup" /><MenuItem icon="delete" onClick={that.deleteDatabase.bind(that, database._id)} text="Delete" intent={Intent.DANGER} /></Menu>}>
