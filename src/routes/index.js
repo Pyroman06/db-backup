@@ -21,6 +21,11 @@ router.post('/login', function(req, res, next) {
         if (!user) { return res.json({ error: true, message: "Incorrect username or password" }); }
         req.logIn(user, function(err) {
             if (err) { return next(err); }
+            if (req.body.remember) {
+                req.session.cookie.maxAge = 2592000000;
+            } else {
+                req.session.cookie.maxAge = 86400000;
+            }
             return res.json({
                 error: false,
                 message: "Signed in",
@@ -113,7 +118,7 @@ router.post('/settings/get', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -145,7 +150,7 @@ router.post('/settings/save', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -190,7 +195,7 @@ router.post('/dashboard/get', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -228,7 +233,7 @@ router.post('/database/add', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -296,7 +301,7 @@ router.post('/database/delete', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -365,7 +370,7 @@ router.post('/database/manualbackup', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -425,7 +430,7 @@ router.post('/scheduler/add', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });
@@ -472,7 +477,7 @@ router.post('/scheduler/delete', function(req, res, next) {
     } else {
         return res.json({
             error: true,
-            message: "Not logged in"
+            message: "Access denied"
         });
     }
 });

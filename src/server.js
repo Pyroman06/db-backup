@@ -30,10 +30,13 @@ app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
 
 //Handling sessions for authentication
+const MongoStore = require('connect-mongo')(ExpressSession);
 app.use(ExpressSession({
     secret: Config.secret,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    store: new MongoStore({ mongooseConnection: Mongoose.connection }),
+    cookie: { maxAge: 86400000 }
 }))
 app.use(Passport.initialize());
 app.use(Passport.session());

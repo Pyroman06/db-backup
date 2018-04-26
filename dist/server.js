@@ -69,10 +69,13 @@ app.use(_bodyParser2.default.json());
 app.use(_bodyParser2.default.urlencoded({ extended: true }));
 
 //Handling sessions for authentication
+var MongoStore = require('connect-mongo')(_expressSession2.default);
 app.use((0, _expressSession2.default)({
     secret: _config2.default.secret,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    store: new MongoStore({ mongooseConnection: _mongoose2.default.connection }),
+    cookie: { maxAge: 86400000 }
 }));
 app.use(_passport2.default.initialize());
 app.use(_passport2.default.session());
