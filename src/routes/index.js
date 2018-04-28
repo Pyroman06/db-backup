@@ -6,6 +6,8 @@ import Settings from '../models/settings';
 import Database from '../models/database';
 import Backup from '../models/backup';
 import Scheduler from '../models/scheduler';
+import Destination from '../models/destination';
+import Providers from '../providers/server';
 import Cron from 'node-cron';
 import { BackupQueue, AddSchedule, RemoveSchedule, InitData } from '../queue';
 import { AWSLoadConfig, AWSUpdateConfig } from '../aws';
@@ -15,6 +17,7 @@ AWSLoadConfig();
 
 const router = new Router();
 
+//Login
 router.post('/login', function(req, res, next) {
     Passport.authenticate('local', function(err, user, info) {
         if (err) { return next(err); }
@@ -35,11 +38,13 @@ router.post('/login', function(req, res, next) {
     })(req, res, next);
 });
 
+//Logout
 router.post('/logout', function(req, res) {
     req.logout();
     res.json({error: false});
 });
 
+//Get user data
 router.post('/getuser', function(req, res, next) {
     if (req.user) {
         return res.json({
@@ -66,6 +71,7 @@ router.post('/getuser', function(req, res, next) {
     }
 })
 
+//Create initial root account
 router.post('/createroot', function(req, res, next) {
     User.count({}, function(err, count) {
         if (err) {
@@ -164,28 +170,38 @@ router.post('/dashboard/get', function(req, res, next) {
                     message: "An internal error occurred"
                 });
             } else {
-                Scheduler.find({}).populate('database').exec(function(err, schedules) {
+                Destination.find(function(err, destinations){
                     if (err) {
                         res.json({
                             error: true,
                             message: "An internal error occurred"
                         });
                     } else {
-                        Backup.find({}).populate('database').sort({'startDate': -1, '_id': -1}).limit(20)
-                        .exec(function(err, backups) {
+                        Scheduler.find({}).populate('database').exec(function(err, schedules) {
                             if (err) {
                                 res.json({
                                     error: true,
                                     message: "An internal error occurred"
                                 });
                             } else {
-                                res.json({
-                                    error: false,
-                                    message: "Dashboard was loaded",
-                                    backups: backups,
-                                    schedules: schedules,
-                                    databases: databases
-                                });
+                                Backup.find({}).populate('database').sort({'startDate': -1, '_id': -1}).limit(20)
+                                .exec(function(err, backups) {
+                                    if (err) {
+                                        res.json({
+                                            error: true,
+                                            message: "An internal error occurred"
+                                        });
+                                    } else {
+                                        res.json({
+                                            error: false,
+                                            message: "Dashboard was loaded",
+                                            backups,
+                                            destinations,
+                                            schedules,
+                                            databases
+                                        });
+                                    }
+                                })
                             }
                         })
                     }
@@ -202,25 +218,39 @@ router.post('/dashboard/get', function(req, res, next) {
 
 router.post('/database/add', function(req, res, next) {
     if (req.user) {
-        if (req.body.name && req.body.name.length > 0 && req.body.engine && (req.body.engine == "mysql" || req.body.engine == "mongodb") && (req.body.engine == "mysql" && req.body.hostname && req.body.port && req.body.username && req.body.password || req.body.engine == "mongodb" && req.body.uri)) {
-            var databaseObj;
-            if (req.body.engine == "mysql") {
-                databaseObj = {name: req.body.name, engine: req.body.engine, options: {hostname: req.body.hostname, port: req.body.port, username: req.body.username, password: req.body.password}}
-            } else if (req.body.engine == "mongodb") {
-                databaseObj = {name: req.body.name, engine: req.body.engine, options: {uri: req.body.uri}}
+        if (req.body.name && req.body.name.length > 0 && req.body.engine && Providers.engines[req.body.engine]) {
+            let engine = Providers.engines[req.body.engine];
+            let isValid = true;
+            let optionList = {};
+            Object.keys(engine.fields).map(function(key) {
+                let field = req.body[key];
+                if (field == null) {
+                    isValid = false;
+                } else {
+                    optionList[key] = req.body[key];
+                }
+            });
+
+            if (!isValid) {
+                return res.json({
+                    error: true,
+                    message: "Incorrect parameters"
+                });
             }
 
-            var newDatabase = new Database(databaseObj);
+            let databaseObj = {name: req.body.name, engine: req.body.engine, options: optionList};
+
+            let newDatabase = new Database(databaseObj);
             newDatabase.save(function(err) {
                 if (err) {
                     return res.json({
                         error: true,
-                        message: "Couldn't add database"
+                        message: "Couldn't add a database"
                     });
                 } else {
                     return res.json({
                         error: false,
-                        message: "Database added"
+                        message: "Database has been added"
                     });
                 }
             });

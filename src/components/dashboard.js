@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea } from '@blueprintjs/core';
 import { AppToaster } from './toaster';
-import Providers from '../providers/client';
+import MaskedText from './maskedtext';
+import Providers from '../providers/schema';
 
 class Dashboard extends React.Component {
     constructor (props) {
@@ -22,6 +23,7 @@ class Dashboard extends React.Component {
             databases: {},
             schedules: {},
             backups: {},
+            destinations: {},
             isManualBackupOpen: false,
             manualBackupDatabaseId: "",
             manualBackupDestination: "local",
@@ -152,6 +154,7 @@ class Dashboard extends React.Component {
                     databases: data.databases,
                     schedules: data.schedules,
                     backups: data.backups,
+                    destinations: data.destinations,
                     error: false,
                     loading: false,
                     initialLoaded: true
@@ -179,10 +182,23 @@ class Dashboard extends React.Component {
         });
     }
 
+    resetOptions(value) {
+        let optionList = {}
+        Object.keys(Providers.engines[value].fields).map(function(key) {
+            optionList[key] = Providers.engines[value].fields[key].default
+        })
+
+        this.setState(optionList);
+    }
+
     databaseOptionChange(option, e) {
         this.setState({
             [option]: e.target.value
         });
+
+        if (option == "engine") {
+            this.resetOptions(e.target.value);
+        }
     }
 
     addDatabase() {
@@ -390,6 +406,10 @@ class Dashboard extends React.Component {
         }, 10000)
     }
 
+    componentDidMount() {
+        this.resetOptions(this.state.engine);
+    }
+
     render() {
         if (this.state.loading || this.state.error) {
             return (
@@ -452,7 +472,7 @@ class Dashboard extends React.Component {
                                                             {
                                                                 Object.keys(Providers.engines[database.engine].fields).map(function(key) {
                                                                     var field = Providers.engines[database.engine].fields[key];
-                                                                    return <div>{ field.name }: {database.options[key]}</div>
+                                                                    return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ database.options[key] } /> : database.options[key] }</div>
                                                                 })
                                                             }
                                                         </td>
@@ -470,29 +490,64 @@ class Dashboard extends React.Component {
                                         title="Manual backup"
                                     >
                                         <div style={{padding: "15px 15px 15px 15px"}}>
-                                            <RadioGroup
-                                                label="Backup destination"
-                                                onChange={that.manualBackupDestinationChange.bind(that)}
-                                                selectedValue={that.state.manualBackupDestination}
-                                            >
-                                                <Radio label="Local" value="local" />
-                                                <Radio label="Amazon S3" value="s3" />
-                                            </RadioGroup>
-                                            {
-                                                that.state.manualBackupDestination == "local" &&
-                                                <FormGroup helperText="Path where to store backup" label="Path" labelFor="manual-local-path" requiredLabel={true}>
-                                                    <input id="manual-local-path" className="pt-input pt-intent-primary" type="text" placeholder="Path" dir="auto" value={that.state.manualBackupPath} onChange={that.manualBackupPathChange.bind(that)} />
-                                                </FormGroup>
-                                                || that.state.manualBackupDestination == "s3" &&
-                                                <FormGroup helperText="S3 bucket to store backup in" label="Amazon S3 Bucket" labelFor="manual-s3-bucket" requiredLabel={true}>
-                                                    <input id="manual-s3-bucket" className="pt-input pt-intent-primary" type="text" placeholder="Amazon S3 Bucket" dir="auto" value={that.state.manualBackupPath} onChange={that.manualBackupPathChange.bind(that)} />
-                                                </FormGroup>
-                                                || null
-                                            }
-                                            <Button text="Start backup" intent={ Intent.PRIMARY } onClick={that.performManualBackup.bind(that)} />
+                                            <label class="pt-label">
+                                                Destination
+                                                <div className="pt-select">
+                                                    <select id="manual-destination" onChange={this.manualBackupDestinationChange.bind(this)}>
+                                                        <option selected>Choose a destination...</option>
+                                                        {
+                                                            this.state.destinations.map(function(destination) {
+                                                                return <option value={destination._id}>{destination.name}</option>
+                                                            })
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </label>
+                                            <Button text="Start backup" intent={ Intent.PRIMARY } onClick={ that.performManualBackup.bind(that) } />
                                         </div>
                                     </Dialog>
                                 </tbody>   
+                                : null
+                            }
+                        </table>
+                    </div>
+                    <div className="db-dashboard-item">
+                        <h2>Destinations</h2>
+                        <Button text="Add new destination" intent={ Intent.PRIMARY } />
+                        <table className="pt-html-table pt-interactive">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Provider</th>
+                                    <th>Options</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            {
+                                this.state.destinations ?
+                                    <tbody>
+                                        {
+                                            this.state.destinations.map(function(destination) {
+                                                return  <tr>
+                                                            <td>{ destination.name }</td>
+                                                            <td>{ Providers.storages[destination.provider].name }</td>
+                                                            <td>
+                                                                { 
+                                                                    Object.keys(Providers.storages[destination.provider].fields).map(function(key) {
+                                                                        if (destination.options[key]) {
+                                                                            let field = Providers.storages[destination.provider].fields[key];
+                                                                            return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ database.options[key] } /> : destination.options[key] }</div>
+                                                                        }
+                                                                    }) 
+                                                                }
+                                                            </td>
+                                                            <td>
+                                                                <Button text="Delete" intent={ Intent.DANGER } />
+                                                            </td>
+                                                        </tr>
+                                            })
+                                        }
+                                    </tbody>
                                 : null
                             }
                         </table>
@@ -502,35 +557,32 @@ class Dashboard extends React.Component {
                         <Button text="Add new task" intent={ Intent.PRIMARY } onClick={this.handleAddTaskOpen.bind(this)} />
                         <Collapse isOpen={this.state.isAddTaskOpen}>
                             <div className="db-form-default" style={{marginTop: "15px"}}>
-                                <div class="pt-select">
-                                    <select onChange={this.addTaskDatabaseChange.bind(this)}>
-                                        <option selected>Choose a database...</option>
-                                        {
-                                            this.state.databases.map(function(database) {
-                                                return <option value={database._id}>{database.name}</option>
-                                            })
-                                        }
-                                    </select>
-                                </div>
-                                <RadioGroup
-                                    label="Backup destination"
-                                    onChange={this.addTaskDestinationChange.bind(this)}
-                                    selectedValue={this.state.addTaskDestination}
-                                >
-                                    <Radio label="Local" value="local" />
-                                    <Radio label="Amazon S3" value="s3" />
-                                </RadioGroup>
-                                {
-                                    this.state.addTaskDestination == "local" &&
-                                    <FormGroup helperText="Path where to store backup" label="Path" labelFor="scheduler-local-path" requiredLabel={true}>
-                                        <input id="scheduler-local-path" className="pt-input pt-intent-primary" type="text" placeholder="Path" dir="auto" value={this.state.addTaskPath} onChange={this.addTaskPathChange.bind(this)} />
-                                    </FormGroup>
-                                    || this.state.addTaskDestination == "s3" &&
-                                    <FormGroup helperText="S3 bucket to store backup in" label="Amazon S3 Bucket" labelFor="scheduler-s3-bucket" requiredLabel={true}>
-                                        <input id="scheduler-s3-bucket" className="pt-input pt-intent-primary" type="text" placeholder="Amazon S3 Bucket" dir="auto" value={this.state.addTaskPath} onChange={this.addTaskPathChange.bind(this)} />
-                                    </FormGroup>
-                                    || null
-                                }
+                                <label className="pt-label">
+                                    Database
+                                    <div className="pt-select">
+                                        <select id="scheduler-database" onChange={this.addTaskDatabaseChange.bind(this)}>
+                                            <option selected>Choose a database...</option>
+                                            {
+                                                this.state.databases.map(function(database) {
+                                                    return <option value={database._id}>{database.name}</option>
+                                                })
+                                            }
+                                        </select>
+                                    </div>
+                                </label>
+                                <label className="pt-label">
+                                    Destination
+                                    <div className="pt-select">
+                                        <select id="scheduler-destination" onChange={this.addTaskDestinationChange.bind(this)}>
+                                            <option selected>Choose a destination...</option>
+                                            {
+                                                this.state.destinations.map(function(destination) {
+                                                    return <option value={destination._id}>{destination.name}</option>
+                                                })
+                                            }
+                                        </select>
+                                    </div>
+                                </label>
                                 <FormGroup helperText="Enter rule in Cron format" label="Rule" labelFor="scheduler-rule" requiredLabel={true}>
                                     <input id="scheduler-rule" className="pt-input pt-intent-primary" type="text" placeholder="Rule" dir="auto" value={this.state.addTaskRule} onChange={this.addTaskRuleChange.bind(this)} />
                                 </FormGroup>

@@ -16,9 +16,13 @@ var _core = require('@blueprintjs/core');
 
 var _toaster = require('./toaster');
 
-var _client = require('../providers/client');
+var _maskedtext = require('./maskedtext');
 
-var _client2 = _interopRequireDefault(_client);
+var _maskedtext2 = _interopRequireDefault(_maskedtext);
+
+var _schema = require('../providers/schema');
+
+var _schema2 = _interopRequireDefault(_schema);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -54,6 +58,7 @@ var Dashboard = function (_React$Component) {
             databases: {},
             schedules: {},
             backups: {},
+            destinations: {},
             isManualBackupOpen: false,
             manualBackupDatabaseId: "",
             manualBackupDestination: "local",
@@ -190,6 +195,7 @@ var Dashboard = function (_React$Component) {
                         databases: data.databases,
                         schedules: data.schedules,
                         backups: data.backups,
+                        destinations: data.destinations,
                         error: false,
                         loading: false,
                         initialLoaded: true
@@ -217,9 +223,23 @@ var Dashboard = function (_React$Component) {
             });
         }
     }, {
+        key: 'resetOptions',
+        value: function resetOptions(value) {
+            var optionList = {};
+            Object.keys(_schema2.default.engines[value].fields).map(function (key) {
+                optionList[key] = _schema2.default.engines[value].fields[key].default;
+            });
+
+            this.setState(optionList);
+        }
+    }, {
         key: 'databaseOptionChange',
         value: function databaseOptionChange(option, e) {
             this.setState(_defineProperty({}, option, e.target.value));
+
+            if (option == "engine") {
+                this.resetOptions(e.target.value);
+            }
         }
     }, {
         key: 'addDatabase',
@@ -232,7 +252,7 @@ var Dashboard = function (_React$Component) {
 
             var data = { engine: this.state.engine, name: this.state.name };
             var that = this;
-            Object.keys(_client2.default.engines[this.state.engine].fields).map(function (key) {
+            Object.keys(_schema2.default.engines[this.state.engine].fields).map(function (key) {
                 data = _extends({}, data, _defineProperty({}, key, that.state[key]));
             });
 
@@ -442,6 +462,11 @@ var Dashboard = function (_React$Component) {
             }, 10000);
         }
     }, {
+        key: 'componentDidMount',
+        value: function componentDidMount() {
+            this.resetOptions(this.state.engine);
+        }
+    }, {
         key: 'render',
         value: function render() {
             if (this.state.loading || this.state.error) {
@@ -482,12 +507,12 @@ var Dashboard = function (_React$Component) {
                                         onChange: this.databaseOptionChange.bind(this, 'engine'),
                                         selectedValue: this.state.engine
                                     },
-                                    Object.keys(_client2.default.engines).map(function (key) {
-                                        return _react2.default.createElement(_core.Radio, { label: _client2.default.engines[key].name, value: key });
+                                    Object.keys(_schema2.default.engines).map(function (key) {
+                                        return _react2.default.createElement(_core.Radio, { label: _schema2.default.engines[key].name, value: key });
                                     })
                                 ),
-                                Object.keys(_client2.default.engines[this.state.engine].fields).map(function (key) {
-                                    var field = _client2.default.engines[that.state.engine].fields[key];
+                                Object.keys(_schema2.default.engines[this.state.engine].fields).map(function (key) {
+                                    var field = _schema2.default.engines[that.state.engine].fields[key];
                                     return _react2.default.createElement(
                                         _core.FormGroup,
                                         { helperText: field.description, label: field.name, labelFor: 'database-' + key, requiredLabel: true },
@@ -543,19 +568,18 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            _client2.default.engines[database.engine].name
+                                            _schema2.default.engines[database.engine].name
                                         ),
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            Object.keys(_client2.default.engines[database.engine].fields).map(function (key) {
-                                                var field = _client2.default.engines[database.engine].fields[key];
+                                            Object.keys(_schema2.default.engines[database.engine].fields).map(function (key) {
+                                                var field = _schema2.default.engines[database.engine].fields[key];
                                                 return _react2.default.createElement(
                                                     'div',
                                                     null,
-                                                    field.name,
-                                                    ': ',
-                                                    database.options[key]
+                                                    field.name + ': ',
+                                                    field.masked ? _react2.default.createElement(_maskedtext2.default, { text: database.options[key] }) : database.options[key]
                                                 );
                                             })
                                         ),
@@ -586,27 +610,115 @@ var Dashboard = function (_React$Component) {
                                         'div',
                                         { style: { padding: "15px 15px 15px 15px" } },
                                         _react2.default.createElement(
-                                            _core.RadioGroup,
-                                            {
-                                                label: 'Backup destination',
-                                                onChange: that.manualBackupDestinationChange.bind(that),
-                                                selectedValue: that.state.manualBackupDestination
-                                            },
-                                            _react2.default.createElement(_core.Radio, { label: 'Local', value: 'local' }),
-                                            _react2.default.createElement(_core.Radio, { label: 'Amazon S3', value: 's3' })
+                                            'label',
+                                            { 'class': 'pt-label' },
+                                            'Destination',
+                                            _react2.default.createElement(
+                                                'div',
+                                                { className: 'pt-select' },
+                                                _react2.default.createElement(
+                                                    'select',
+                                                    { id: 'manual-destination', onChange: this.manualBackupDestinationChange.bind(this) },
+                                                    _react2.default.createElement(
+                                                        'option',
+                                                        { selected: true },
+                                                        'Choose a destination...'
+                                                    ),
+                                                    this.state.destinations.map(function (destination) {
+                                                        return _react2.default.createElement(
+                                                            'option',
+                                                            { value: destination._id },
+                                                            destination.name
+                                                        );
+                                                    })
+                                                )
+                                            )
                                         ),
-                                        that.state.manualBackupDestination == "local" && _react2.default.createElement(
-                                            _core.FormGroup,
-                                            { helperText: 'Path where to store backup', label: 'Path', labelFor: 'manual-local-path', requiredLabel: true },
-                                            _react2.default.createElement('input', { id: 'manual-local-path', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Path', dir: 'auto', value: that.state.manualBackupPath, onChange: that.manualBackupPathChange.bind(that) })
-                                        ) || that.state.manualBackupDestination == "s3" && _react2.default.createElement(
-                                            _core.FormGroup,
-                                            { helperText: 'S3 bucket to store backup in', label: 'Amazon S3 Bucket', labelFor: 'manual-s3-bucket', requiredLabel: true },
-                                            _react2.default.createElement('input', { id: 'manual-s3-bucket', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Amazon S3 Bucket', dir: 'auto', value: that.state.manualBackupPath, onChange: that.manualBackupPathChange.bind(that) })
-                                        ) || null,
                                         _react2.default.createElement(_core.Button, { text: 'Start backup', intent: _core.Intent.PRIMARY, onClick: that.performManualBackup.bind(that) })
                                     )
                                 )
+                            ) : null
+                        )
+                    ),
+                    _react2.default.createElement(
+                        'div',
+                        { className: 'db-dashboard-item' },
+                        _react2.default.createElement(
+                            'h2',
+                            null,
+                            'Destinations'
+                        ),
+                        _react2.default.createElement(_core.Button, { text: 'Add new destination', intent: _core.Intent.PRIMARY }),
+                        _react2.default.createElement(
+                            'table',
+                            { className: 'pt-html-table pt-interactive' },
+                            _react2.default.createElement(
+                                'thead',
+                                null,
+                                _react2.default.createElement(
+                                    'tr',
+                                    null,
+                                    _react2.default.createElement(
+                                        'th',
+                                        null,
+                                        'Name'
+                                    ),
+                                    _react2.default.createElement(
+                                        'th',
+                                        null,
+                                        'Provider'
+                                    ),
+                                    _react2.default.createElement(
+                                        'th',
+                                        null,
+                                        'Options'
+                                    ),
+                                    _react2.default.createElement(
+                                        'th',
+                                        null,
+                                        'Actions'
+                                    )
+                                )
+                            ),
+                            this.state.destinations ? _react2.default.createElement(
+                                'tbody',
+                                null,
+                                this.state.destinations.map(function (destination) {
+                                    return _react2.default.createElement(
+                                        'tr',
+                                        null,
+                                        _react2.default.createElement(
+                                            'td',
+                                            null,
+                                            destination.name
+                                        ),
+                                        _react2.default.createElement(
+                                            'td',
+                                            null,
+                                            _schema2.default.storages[destination.provider].name
+                                        ),
+                                        _react2.default.createElement(
+                                            'td',
+                                            null,
+                                            Object.keys(_schema2.default.storages[destination.provider].fields).map(function (key) {
+                                                if (destination.options[key]) {
+                                                    var field = _schema2.default.storages[destination.provider].fields[key];
+                                                    return _react2.default.createElement(
+                                                        'div',
+                                                        null,
+                                                        field.name + ': ',
+                                                        field.masked ? _react2.default.createElement(_maskedtext2.default, { text: database.options[key] }) : destination.options[key]
+                                                    );
+                                                }
+                                            })
+                                        ),
+                                        _react2.default.createElement(
+                                            'td',
+                                            null,
+                                            _react2.default.createElement(_core.Button, { text: 'Delete', intent: _core.Intent.DANGER })
+                                        )
+                                    );
+                                })
                             ) : null
                         )
                     ),
@@ -626,44 +738,55 @@ var Dashboard = function (_React$Component) {
                                 'div',
                                 { className: 'db-form-default', style: { marginTop: "15px" } },
                                 _react2.default.createElement(
-                                    'div',
-                                    { 'class': 'pt-select' },
+                                    'label',
+                                    { className: 'pt-label' },
+                                    'Database',
                                     _react2.default.createElement(
-                                        'select',
-                                        { onChange: this.addTaskDatabaseChange.bind(this) },
+                                        'div',
+                                        { className: 'pt-select' },
                                         _react2.default.createElement(
-                                            'option',
-                                            { selected: true },
-                                            'Choose a database...'
-                                        ),
-                                        this.state.databases.map(function (database) {
-                                            return _react2.default.createElement(
+                                            'select',
+                                            { id: 'scheduler-database', onChange: this.addTaskDatabaseChange.bind(this) },
+                                            _react2.default.createElement(
                                                 'option',
-                                                { value: database._id },
-                                                database.name
-                                            );
-                                        })
+                                                { selected: true },
+                                                'Choose a database...'
+                                            ),
+                                            this.state.databases.map(function (database) {
+                                                return _react2.default.createElement(
+                                                    'option',
+                                                    { value: database._id },
+                                                    database.name
+                                                );
+                                            })
+                                        )
                                     )
                                 ),
                                 _react2.default.createElement(
-                                    _core.RadioGroup,
-                                    {
-                                        label: 'Backup destination',
-                                        onChange: this.addTaskDestinationChange.bind(this),
-                                        selectedValue: this.state.addTaskDestination
-                                    },
-                                    _react2.default.createElement(_core.Radio, { label: 'Local', value: 'local' }),
-                                    _react2.default.createElement(_core.Radio, { label: 'Amazon S3', value: 's3' })
+                                    'label',
+                                    { className: 'pt-label' },
+                                    'Destination',
+                                    _react2.default.createElement(
+                                        'div',
+                                        { className: 'pt-select' },
+                                        _react2.default.createElement(
+                                            'select',
+                                            { id: 'scheduler-destination', onChange: this.addTaskDestinationChange.bind(this) },
+                                            _react2.default.createElement(
+                                                'option',
+                                                { selected: true },
+                                                'Choose a destination...'
+                                            ),
+                                            this.state.destinations.map(function (destination) {
+                                                return _react2.default.createElement(
+                                                    'option',
+                                                    { value: destination._id },
+                                                    destination.name
+                                                );
+                                            })
+                                        )
+                                    )
                                 ),
-                                this.state.addTaskDestination == "local" && _react2.default.createElement(
-                                    _core.FormGroup,
-                                    { helperText: 'Path where to store backup', label: 'Path', labelFor: 'scheduler-local-path', requiredLabel: true },
-                                    _react2.default.createElement('input', { id: 'scheduler-local-path', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Path', dir: 'auto', value: this.state.addTaskPath, onChange: this.addTaskPathChange.bind(this) })
-                                ) || this.state.addTaskDestination == "s3" && _react2.default.createElement(
-                                    _core.FormGroup,
-                                    { helperText: 'S3 bucket to store backup in', label: 'Amazon S3 Bucket', labelFor: 'scheduler-s3-bucket', requiredLabel: true },
-                                    _react2.default.createElement('input', { id: 'scheduler-s3-bucket', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Amazon S3 Bucket', dir: 'auto', value: this.state.addTaskPath, onChange: this.addTaskPathChange.bind(this) })
-                                ) || null,
                                 _react2.default.createElement(
                                     _core.FormGroup,
                                     { helperText: 'Enter rule in Cron format', label: 'Rule', labelFor: 'scheduler-rule', requiredLabel: true },

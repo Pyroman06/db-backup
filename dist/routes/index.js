@@ -34,6 +34,14 @@ var _scheduler = require('../models/scheduler');
 
 var _scheduler2 = _interopRequireDefault(_scheduler);
 
+var _destination = require('../models/destination');
+
+var _destination2 = _interopRequireDefault(_destination);
+
+var _server = require('../providers/server');
+
+var _server2 = _interopRequireDefault(_server);
+
 var _nodeCron = require('node-cron');
 
 var _nodeCron2 = _interopRequireDefault(_nodeCron);
@@ -49,6 +57,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var router = new _express.Router();
 
+//Login
 router.post('/login', function (req, res, next) {
     _passport2.default.authenticate('local', function (err, user, info) {
         if (err) {
@@ -75,11 +84,13 @@ router.post('/login', function (req, res, next) {
     })(req, res, next);
 });
 
+//Logout
 router.post('/logout', function (req, res) {
     req.logout();
     res.json({ error: false });
 });
 
+//Get user data
 router.post('/getuser', function (req, res, next) {
     if (req.user) {
         return res.json({
@@ -106,6 +117,7 @@ router.post('/getuser', function (req, res, next) {
     }
 });
 
+//Create initial root account
 router.post('/createroot', function (req, res, next) {
     _user2.default.count({}, function (err, count) {
         if (err) {
@@ -204,26 +216,36 @@ router.post('/dashboard/get', function (req, res, next) {
                     message: "An internal error occurred"
                 });
             } else {
-                _scheduler2.default.find({}).populate('database').exec(function (err, schedules) {
+                _destination2.default.find(function (err, destinations) {
                     if (err) {
                         res.json({
                             error: true,
                             message: "An internal error occurred"
                         });
                     } else {
-                        _backup2.default.find({}).populate('database').sort({ 'startDate': -1, '_id': -1 }).limit(20).exec(function (err, backups) {
+                        _scheduler2.default.find({}).populate('database').exec(function (err, schedules) {
                             if (err) {
                                 res.json({
                                     error: true,
                                     message: "An internal error occurred"
                                 });
                             } else {
-                                res.json({
-                                    error: false,
-                                    message: "Dashboard was loaded",
-                                    backups: backups,
-                                    schedules: schedules,
-                                    databases: databases
+                                _backup2.default.find({}).populate('database').sort({ 'startDate': -1, '_id': -1 }).limit(20).exec(function (err, backups) {
+                                    if (err) {
+                                        res.json({
+                                            error: true,
+                                            message: "An internal error occurred"
+                                        });
+                                    } else {
+                                        res.json({
+                                            error: false,
+                                            message: "Dashboard was loaded",
+                                            backups: backups,
+                                            destinations: destinations,
+                                            schedules: schedules,
+                                            databases: databases
+                                        });
+                                    }
                                 });
                             }
                         });
@@ -241,25 +263,39 @@ router.post('/dashboard/get', function (req, res, next) {
 
 router.post('/database/add', function (req, res, next) {
     if (req.user) {
-        if (req.body.name && req.body.name.length > 0 && req.body.engine && (req.body.engine == "mysql" || req.body.engine == "mongodb") && (req.body.engine == "mysql" && req.body.hostname && req.body.port && req.body.username && req.body.password || req.body.engine == "mongodb" && req.body.uri)) {
-            var databaseObj;
-            if (req.body.engine == "mysql") {
-                databaseObj = { name: req.body.name, engine: req.body.engine, options: { hostname: req.body.hostname, port: req.body.port, username: req.body.username, password: req.body.password } };
-            } else if (req.body.engine == "mongodb") {
-                databaseObj = { name: req.body.name, engine: req.body.engine, options: { uri: req.body.uri } };
+        if (req.body.name && req.body.name.length > 0 && req.body.engine && _server2.default.engines[req.body.engine]) {
+            var engine = _server2.default.engines[req.body.engine];
+            var isValid = true;
+            var optionList = {};
+            Object.keys(engine.fields).map(function (key) {
+                var field = req.body[key];
+                if (field == null) {
+                    isValid = false;
+                } else {
+                    optionList[key] = req.body[key];
+                }
+            });
+
+            if (!isValid) {
+                return res.json({
+                    error: true,
+                    message: "Incorrect parameters"
+                });
             }
+
+            var databaseObj = { name: req.body.name, engine: req.body.engine, options: optionList };
 
             var newDatabase = new _database2.default(databaseObj);
             newDatabase.save(function (err) {
                 if (err) {
                     return res.json({
                         error: true,
-                        message: "Couldn't add database"
+                        message: "Couldn't add a database"
                     });
                 } else {
                     return res.json({
                         error: false,
-                        message: "Database added"
+                        message: "Database has been added"
                     });
                 }
             });

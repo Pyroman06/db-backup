@@ -124,3 +124,12 @@ input {
 .db-margin-right {
     margin-right: 15px;
 }
+
+.db-margin-left-small {
+    margin-left: 5px;
+}
+
+.db-button-focus:focus {
+    outline: none;
+    box-shadow: none;
+}
