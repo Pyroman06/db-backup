@@ -1,30 +1,28 @@
 import React from 'react';
-import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea } from '@blueprintjs/core';
+import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea, NumericInput, FileInput } from '@blueprintjs/core';
 import { AppToaster } from './toaster';
 import MaskedText from './maskedtext';
 import Providers from '../providers/schema';
+import { ENUM } from '../providers/types';
 
 class Dashboard extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
-            isAddDatabaseOpen: false,
-            name: "",
-            engine: "mysql",
-            hostname: "",
-            port: "",
-            username: "",
-            password: "",
-            uri: "",
-            addDatabaseDisabled: false,
-            error: false,
-            loading: true,
-            initialLoaded: false,
             databases: {},
             schedules: {},
             backups: {},
             destinations: {},
+            initialLoaded: false,
+            loading: true,
+            error: false,
+            isAddDatabaseOpen: false,
+            addDatabaseDisabled: false,
+            isAddDestinationOpen: false,
+            addDestinationDisabled: false,
             isManualBackupOpen: false,
+            engine: "mysql",
+            provider: "local",
             manualBackupDatabaseId: "",
             manualBackupDestination: "local",
             manualBackupPath: "",
@@ -176,28 +174,50 @@ class Dashboard extends React.Component {
         });
     }
 
-    handleAddDatabaseOpen() {
-        this.setState({
-            isAddDatabaseOpen: !this.state.isAddDatabaseOpen
-        });
+    handleAddDestinationOpen() {
+        this.setState(prevState => ({
+            isAddDestinationOpen: !prevState.isAddDestinationOpen
+        }));
     }
 
-    resetOptions(value) {
-        let optionList = {}
+    handleAddDatabaseOpen() {
+        this.setState(prevState => ({
+            isAddDatabaseOpen: !prevState.isAddDatabaseOpen
+        }));
+    }
+
+    resetEngines(value) {
+        let optionList = { database_name: "" }
         Object.keys(Providers.engines[value].fields).map(function(key) {
-            optionList[key] = Providers.engines[value].fields[key].default
+            optionList[`database_${key}`] = Providers.engines[value].fields[key].default
+        })
+        this.setState(optionList);
+    }
+
+    resetProviders(value) {
+        let optionList = { destination_name: "" }
+        Object.keys(Providers.storages[value].fields).map(function(key) {
+            optionList[`destination_${key}`] = Providers.storages[value].fields[key].default
         })
 
         this.setState(optionList);
     }
 
-    databaseOptionChange(option, e) {
+    fileChange(option, e) {
+        this.setState({
+            [option]: { path: e.target.value, file: e.target.files[0] }
+        });
+    }
+
+    optionChange(option, e) {
         this.setState({
             [option]: e.target.value
         });
 
         if (option == "engine") {
-            this.resetOptions(e.target.value);
+            this.resetEngines(e.target.value);
+        } else if (option == "provider") {
+            this.resetProviders(e.target.value);
         }
     }
 
@@ -206,10 +226,10 @@ class Dashboard extends React.Component {
             addDatabaseDisabled: true
         });
 
-        var data = { engine: this.state.engine, name: this.state.name };
+        var data = { engine: this.state.engine, name: this.state.database_name };
         var that = this;
         Object.keys(Providers.engines[this.state.engine].fields).map(function(key) {
-            data = {...data, [key]: that.state[key]}
+            data = {...data, [key]: that.state[`database_${key}`]}
         });
 
         fetch('/api/database/add', {
@@ -269,7 +289,7 @@ class Dashboard extends React.Component {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                databaseId: databaseId
+                databaseId
             })
         })
         .then((response) => {
@@ -282,7 +302,39 @@ class Dashboard extends React.Component {
         .then((response) => response.json())
         .then((data) => {
             if (!data.error) {
-                AppToaster.show({ message: "Database was deleted", intent: Intent.SUCCESS });
+                AppToaster.show({ message: data.message, intent: Intent.SUCCESS });
+                this.getDashboard();
+            } else {
+                AppToaster.show({ message: data.message, intent: Intent.DANGER });
+            }
+        })
+        .catch((err) => {
+            AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: Intent.DANGER });
+        });
+    }
+
+    deleteDestination(destinationId) {
+        fetch('/api/destination/delete', {
+            credentials: 'same-origin',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                destinationId
+            })
+        })
+        .then((response) => {
+            if (!response.ok) {
+                AppToaster.show({ message: response.statusText, intent: Intent.DANGER });
+            }
+
+            return response;
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.error) {
+                AppToaster.show({ message: data.message, intent: Intent.SUCCESS });
                 this.getDashboard();
             } else {
                 AppToaster.show({ message: data.message, intent: Intent.DANGER });
@@ -308,12 +360,6 @@ class Dashboard extends React.Component {
         });
     }
 
-    manualBackupPathChange(e) {
-        this.setState({
-            manualBackupPath: e.target.value
-        });
-    }
-
     performManualBackup() {
         this.toggleManualBackup();
         fetch('/api/database/manualbackup', {
@@ -324,8 +370,7 @@ class Dashboard extends React.Component {
             },
             body: JSON.stringify({
                 databaseId: this.state.manualBackupDatabaseId,
-                destination: this.state.manualBackupDestination,
-                path: this.state.manualBackupPath
+                destination: this.state.manualBackupDestination
             })
         })
         .then((response) => {
@@ -398,6 +443,65 @@ class Dashboard extends React.Component {
         })
     }
 
+    addDestination() {
+        this.setState({
+            addDestinationDisabled: true
+        });
+
+        let formData = new FormData()
+        formData.append('provider', this.state.provider)
+        formData.append('name', this.state.destination_name)
+        
+        var that = this;
+        Object.keys(Providers.storages[this.state.provider].fields).map(function(key) {
+            let field = Providers.storages[that.state.provider].fields[key];
+            if (field.type == ENUM.TYPE_FILE) {
+                formData.append(key, that.state[`destination_${key}`].file)
+            } else {
+                formData.append(key, that.state[`destination_${key}`])
+            }
+        });
+
+        fetch('/api/destination/add', {
+            credentials: 'same-origin',
+            method: 'POST',
+            body: formData
+        })
+        .then((response) => {
+            if (!response.ok) {
+                this.setState({
+                    addDestinationDisabled: false
+                });
+                AppToaster.show({ message: response.statusText, intent: Intent.DANGER });
+            }
+
+            return response;
+        })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.error) {
+                AppToaster.show({ message: "Destination was added", intent: Intent.SUCCESS });
+                this.setState({
+                    isAddDestinationOpen: false,
+                    addDestinationDisabled: false,
+                    provider: "local",
+                });
+                this.getDashboard();
+            } else {
+                this.setState({
+                    addDestinationDisabled: false
+                });
+                AppToaster.show({ message: data.message, intent: Intent.DANGER });
+            }
+        })
+        .catch((err) => {
+            this.setState({
+                addDatabaseDisabled: false
+            });
+            AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: Intent.DANGER });
+        });
+    }
+
     componentWillMount() {
         var that = this;
         this.getDashboard();
@@ -407,7 +511,8 @@ class Dashboard extends React.Component {
     }
 
     componentDidMount() {
-        this.resetOptions(this.state.engine);
+        this.resetEngines(this.state.engine);
+        this.resetProviders(this.state.provider);
     }
 
     render() {
@@ -427,11 +532,11 @@ class Dashboard extends React.Component {
                         <Collapse isOpen={this.state.isAddDatabaseOpen}>
                             <div className="db-form-default" style={{marginTop: "15px"}}>
                                 <FormGroup helperText="Choose a name for new database to be able to distinguish it from others" label="Name" labelFor="database-name" requiredLabel={true}>
-                                    <input id="database-name" className="pt-input pt-intent-primary" type="text" placeholder="Name" dir="auto" value={this.state.name} onChange={this.databaseOptionChange.bind(this, 'name')} />
+                                    <input id="database-name" className="pt-input pt-intent-primary" type="text" placeholder="Name" dir="auto" value={this.state.name} onChange={this.optionChange.bind(this, 'database_name')} />
                                 </FormGroup>
                                 <RadioGroup
                                     label="Database engine"
-                                    onChange={this.databaseOptionChange.bind(this, 'engine')}
+                                    onChange={this.optionChange.bind(this, 'engine')}
                                     selectedValue={this.state.engine}
                                 >
                                     {
@@ -444,7 +549,12 @@ class Dashboard extends React.Component {
                                     Object.keys(Providers.engines[this.state.engine].fields).map(function(key) {
                                         let field = Providers.engines[that.state.engine].fields[key];
                                         return  <FormGroup helperText={ field.description } label={ field.name } labelFor={`database-${key}`} requiredLabel={ true }>
-                                                    <input id={`database-${key}`} className="pt-input pt-intent-primary" type="text" placeholder={ field.name } dir="auto" value={that.state[key]} onChange={that.databaseOptionChange.bind(that, key)} />
+                                                    {
+                                                        (field.type == ENUM.TYPE_STRING || field.type == ENUM.TYPE_NUMBER) &&
+                                                            <input id={`database-${key}`} className="pt-input pt-intent-primary" type="text" placeholder={ field.name } dir="auto" value={that.state[`database_${key}`]} onChange={that.optionChange.bind(that, `database_${key}`)} />
+                                                        || (field.type == ENUM.TYPE_FILE) &&
+                                                            <FileInput onInputChange={that.fileChange.bind(that, `database_${key}`)} text={that.state[`database_${key}`].path} />
+                                                    }
                                                 </FormGroup>
                                     })
                                 }
@@ -513,7 +623,39 @@ class Dashboard extends React.Component {
                     </div>
                     <div className="db-dashboard-item">
                         <h2>Destinations</h2>
-                        <Button text="Add new destination" intent={ Intent.PRIMARY } />
+                        <Button text="Add new destination" intent={ Intent.PRIMARY } onClick={this.handleAddDestinationOpen.bind(this)} />
+                        <Collapse isOpen={this.state.isAddDestinationOpen}>
+                            <div className="db-form-default" style={{marginTop: "15px"}}>
+                                <FormGroup helperText="Choose a name for a new destination to be able to distinguish it from others" label="Name" labelFor="destination-name" requiredLabel={true}>
+                                    <input id="destination-name" className="pt-input pt-intent-primary" type="text" placeholder="Name" dir="auto" value={this.state.destinationName} onChange={this.optionChange.bind(this, 'destination_name')} />
+                                </FormGroup>
+                                <RadioGroup
+                                    label="Provider"
+                                    onChange={this.optionChange.bind(this, 'provider')}
+                                    selectedValue={this.state.provider}
+                                >
+                                    {
+                                        Object.keys(Providers.storages).map(function(key) {
+                                            return <Radio label={ Providers.storages[key].name } value={ key } />
+                                        })
+                                    }
+                                </RadioGroup>
+                                {
+                                    Object.keys(Providers.storages[this.state.provider].fields).map(function(key) {
+                                        let field = Providers.storages[that.state.provider].fields[key];
+                                        return  <FormGroup helperText={ field.description } label={ field.name } labelFor={`destination-${key}`} requiredLabel={ true }>
+                                                    {
+                                                        (field.type == ENUM.TYPE_STRING || field.type == ENUM.TYPE_NUMBER) &&
+                                                            <input id={`destination-${key}`} className="pt-input pt-intent-primary" type="text" placeholder={ field.name } dir="auto" value={that.state[`destination_${key}`]} onChange={that.optionChange.bind(that, `destination_${key}`)} />
+                                                        || (field.type == ENUM.TYPE_FILE) &&
+                                                            <FileInput onInputChange={that.fileChange.bind(that, `destination_${key}`)} text={that.state[`destination_${key}`].path} />
+                                                    }
+                                                </FormGroup>
+                                    })
+                                }
+                                <Button text="Add" intent={ Intent.PRIMARY } className="pt-large" loading={this.state.addDestinationDisabled} onClick={this.addDestination.bind(this)} />
+                            </div>
+                        </Collapse>
                         <table className="pt-html-table pt-interactive">
                             <thead>
                                 <tr>
@@ -536,13 +678,17 @@ class Dashboard extends React.Component {
                                                                     Object.keys(Providers.storages[destination.provider].fields).map(function(key) {
                                                                         if (destination.options[key]) {
                                                                             let field = Providers.storages[destination.provider].fields[key];
-                                                                            return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ database.options[key] } /> : destination.options[key] }</div>
+                                                                            if (field.type == ENUM.TYPE_FILE) {
+                                                                                return <div>{`${field.name}: `}<span style={{fontStyle: "italic"}}>Uploaded</span></div>
+                                                                            } else {
+                                                                                return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ database.options[key] } /> : destination.options[key] }</div>
+                                                                            }
                                                                         }
                                                                     }) 
                                                                 }
                                                             </td>
                                                             <td>
-                                                                <Button text="Delete" intent={ Intent.DANGER } />
+                                                                <Button text="Delete" intent={ Intent.DANGER } onClick={ that.deleteDestination.bind(that, destination._id) } />
                                                             </td>
                                                         </tr>
                                             })

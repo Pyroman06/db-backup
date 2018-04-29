@@ -1,31 +1,31 @@
 "use strict";
 
-var _stream = require("stream");
+var _types = require("./types");
 
 module.exports = {
     engines: {
         mysql: {
             name: "MySQL",
             fields: {
-                hostname: { type: String, default: "", name: "Hostname", description: "Hostname of your database" },
-                port: { type: Number, default: 3306, name: "Port", description: "Port of your database" },
-                username: { type: String, default: "", name: "Username", description: "Username for your database" },
-                password: { type: String, default: "", name: "Password", description: "Password for your database", masked: true }
+                hostname: { type: _types.ENUM.TYPE_STRING, default: "", name: "Hostname", description: "Hostname of your database" },
+                port: { type: _types.ENUM.TYPE_NUMBER, default: 3306, name: "Port", description: "Port of your database", mix: 0, max: 65535 },
+                username: { type: _types.ENUM.TYPE_STRING, default: "", name: "Username", description: "Username for your database" },
+                password: { type: _types.ENUM.TYPE_STRING, default: "", name: "Password", description: "Password for your database", masked: true }
             }
         },
         postgresql: {
             name: "PostgreSQL",
             fields: {
-                hostname: { type: String, default: "", name: "Hostname", description: "Hostname of your database" },
-                port: { type: Number, default: 5432, name: "Port", description: "Port of your database" },
-                username: { type: String, default: "", name: "Username", description: "Username for your database" },
-                password: { type: String, default: "", name: "Password", description: "Password for your database", masked: true }
+                hostname: { type: _types.ENUM.TYPE_STRING, default: "", name: "Hostname", description: "Hostname of your database" },
+                port: { type: _types.ENUM.TYPE_NUMBER, default: 5432, name: "Port", description: "Port of your database", mix: 0, max: 65535 },
+                username: { type: _types.ENUM.TYPE_STRING, default: "", name: "Username", description: "Username for your database" },
+                password: { type: _types.ENUM.TYPE_STRING, default: "", name: "Password", description: "Password for your database", masked: true }
             }
         },
         mongodb: {
             name: "MongoDB",
             fields: {
-                uri: { type: String, default: "", name: "Connection string", description: "Connection string for your MongoDB database", masked: true }
+                uri: { type: _types.ENUM.TYPE_STRING, default: "", name: "Connection string", description: "Connection string for your MongoDB database", masked: true }
             }
         }
     },
@@ -33,23 +33,23 @@ module.exports = {
         local: {
             name: "Local",
             fields: {
-                path: { type: String, default: "/tmp", name: "Path", description: "Backup path" }
+                path: { type: _types.ENUM.TYPE_STRING, default: "/tmp", name: "Path", description: "Backup path" }
             }
         },
         s3: {
             name: "Amazon S3",
             fields: {
-                region: { type: String, required: true, default: "", name: "Region", description: "Region of your Amazon S3 bucket" },
-                accessKey: { type: String, required: true, default: "", name: "Access Key ID", description: "Access Key ID of your Amazon IAM user" },
-                secretKey: { type: String, required: true, default: "", name: "Secret Key ID", description: "Secret Key ID of your Amazon IAM user", masked: true },
-                bucket: { type: String, required: true, default: "", name: "Bucket", description: "Name of your Amazon S3 bucket" }
+                region: { type: _types.ENUM.TYPE_STRING, default: "", name: "Region", description: "Region of your Amazon S3 bucket" },
+                accessKey: { type: _types.ENUM.TYPE_STRING, default: "", name: "Access Key ID", description: "Access Key ID of your Amazon IAM user" },
+                secretKey: { type: _types.ENUM.TYPE_STRING, default: "", name: "Secret Key ID", description: "Secret Key ID of your Amazon IAM user", masked: true },
+                bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your Amazon S3 bucket" }
             }
         },
         gcs: {
             name: "Google Cloud Storage",
             fields: {
-                serviceAccount: { type: Object, name: "Service account", description: "Service account credentials" },
-                bucket: { type: String, default: "", name: "Bucket", description: "Name of your Amazon S3 bucket" }
+                serviceAccount: { type: _types.ENUM.TYPE_FILE, default: "", name: "Service account", description: "JSON file with your GCS service account credentials" },
+                bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your GCS bucket" }
             }
         }
     }

@@ -24,6 +24,8 @@ var _schema = require('../providers/schema');
 
 var _schema2 = _interopRequireDefault(_schema);
 
+var _types = require('../providers/types');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -43,23 +45,20 @@ var Dashboard = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (Dashboard.__proto__ || Object.getPrototypeOf(Dashboard)).call(this, props));
 
         _this.state = {
-            isAddDatabaseOpen: false,
-            name: "",
-            engine: "mysql",
-            hostname: "",
-            port: "",
-            username: "",
-            password: "",
-            uri: "",
-            addDatabaseDisabled: false,
-            error: false,
-            loading: true,
-            initialLoaded: false,
             databases: {},
             schedules: {},
             backups: {},
             destinations: {},
+            initialLoaded: false,
+            loading: true,
+            error: false,
+            isAddDatabaseOpen: false,
+            addDatabaseDisabled: false,
+            isAddDestinationOpen: false,
+            addDestinationDisabled: false,
             isManualBackupOpen: false,
+            engine: "mysql",
+            provider: "local",
             manualBackupDatabaseId: "",
             manualBackupDestination: "local",
             manualBackupPath: "",
@@ -216,29 +215,56 @@ var Dashboard = function (_React$Component) {
             });
         }
     }, {
-        key: 'handleAddDatabaseOpen',
-        value: function handleAddDatabaseOpen() {
-            this.setState({
-                isAddDatabaseOpen: !this.state.isAddDatabaseOpen
+        key: 'handleAddDestinationOpen',
+        value: function handleAddDestinationOpen() {
+            this.setState(function (prevState) {
+                return {
+                    isAddDestinationOpen: !prevState.isAddDestinationOpen
+                };
             });
         }
     }, {
-        key: 'resetOptions',
-        value: function resetOptions(value) {
-            var optionList = {};
+        key: 'handleAddDatabaseOpen',
+        value: function handleAddDatabaseOpen() {
+            this.setState(function (prevState) {
+                return {
+                    isAddDatabaseOpen: !prevState.isAddDatabaseOpen
+                };
+            });
+        }
+    }, {
+        key: 'resetEngines',
+        value: function resetEngines(value) {
+            var optionList = { database_name: "" };
             Object.keys(_schema2.default.engines[value].fields).map(function (key) {
-                optionList[key] = _schema2.default.engines[value].fields[key].default;
+                optionList['database_' + key] = _schema2.default.engines[value].fields[key].default;
+            });
+            this.setState(optionList);
+        }
+    }, {
+        key: 'resetProviders',
+        value: function resetProviders(value) {
+            var optionList = { destination_name: "" };
+            Object.keys(_schema2.default.storages[value].fields).map(function (key) {
+                optionList['destination_' + key] = _schema2.default.storages[value].fields[key].default;
             });
 
             this.setState(optionList);
         }
     }, {
-        key: 'databaseOptionChange',
-        value: function databaseOptionChange(option, e) {
+        key: 'fileChange',
+        value: function fileChange(option, e) {
+            this.setState(_defineProperty({}, option, { path: e.target.value, file: e.target.files[0] }));
+        }
+    }, {
+        key: 'optionChange',
+        value: function optionChange(option, e) {
             this.setState(_defineProperty({}, option, e.target.value));
 
             if (option == "engine") {
-                this.resetOptions(e.target.value);
+                this.resetEngines(e.target.value);
+            } else if (option == "provider") {
+                this.resetProviders(e.target.value);
             }
         }
     }, {
@@ -250,10 +276,10 @@ var Dashboard = function (_React$Component) {
                 addDatabaseDisabled: true
             });
 
-            var data = { engine: this.state.engine, name: this.state.name };
+            var data = { engine: this.state.engine, name: this.state.database_name };
             var that = this;
             Object.keys(_schema2.default.engines[this.state.engine].fields).map(function (key) {
-                data = _extends({}, data, _defineProperty({}, key, that.state[key]));
+                data = _extends({}, data, _defineProperty({}, key, that.state['database_' + key]));
             });
 
             fetch('/api/database/add', {
@@ -326,8 +352,41 @@ var Dashboard = function (_React$Component) {
                 return response.json();
             }).then(function (data) {
                 if (!data.error) {
-                    _toaster.AppToaster.show({ message: "Database was deleted", intent: _core.Intent.SUCCESS });
+                    _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.SUCCESS });
                     _this6.getDashboard();
+                } else {
+                    _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.DANGER });
+                }
+            }).catch(function (err) {
+                _toaster.AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: _core.Intent.DANGER });
+            });
+        }
+    }, {
+        key: 'deleteDestination',
+        value: function deleteDestination(destinationId) {
+            var _this7 = this;
+
+            fetch('/api/destination/delete', {
+                credentials: 'same-origin',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    destinationId: destinationId
+                })
+            }).then(function (response) {
+                if (!response.ok) {
+                    _toaster.AppToaster.show({ message: response.statusText, intent: _core.Intent.DANGER });
+                }
+
+                return response;
+            }).then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                if (!data.error) {
+                    _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.SUCCESS });
+                    _this7.getDashboard();
                 } else {
                     _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.DANGER });
                 }
@@ -353,16 +412,9 @@ var Dashboard = function (_React$Component) {
             });
         }
     }, {
-        key: 'manualBackupPathChange',
-        value: function manualBackupPathChange(e) {
-            this.setState({
-                manualBackupPath: e.target.value
-            });
-        }
-    }, {
         key: 'performManualBackup',
         value: function performManualBackup() {
-            var _this7 = this;
+            var _this8 = this;
 
             this.toggleManualBackup();
             fetch('/api/database/manualbackup', {
@@ -373,8 +425,7 @@ var Dashboard = function (_React$Component) {
                 },
                 body: JSON.stringify({
                     databaseId: this.state.manualBackupDatabaseId,
-                    destination: this.state.manualBackupDestination,
-                    path: this.state.manualBackupPath
+                    destination: this.state.manualBackupDestination
                 })
             }).then(function (response) {
                 if (!response.ok) {
@@ -387,7 +438,7 @@ var Dashboard = function (_React$Component) {
             }).then(function (data) {
                 if (!data.error) {
                     _toaster.AppToaster.show({ message: "Backup was added to the queue", intent: _core.Intent.SUCCESS });
-                    _this7.getDashboard();
+                    _this8.getDashboard();
                 } else {
                     _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.DANGER });
                 }
@@ -453,6 +504,66 @@ var Dashboard = function (_React$Component) {
             });
         }
     }, {
+        key: 'addDestination',
+        value: function addDestination() {
+            var _this9 = this;
+
+            this.setState({
+                addDestinationDisabled: true
+            });
+
+            var formData = new FormData();
+            formData.append('provider', this.state.provider);
+            formData.append('name', this.state.destination_name);
+
+            var that = this;
+            Object.keys(_schema2.default.storages[this.state.provider].fields).map(function (key) {
+                var field = _schema2.default.storages[that.state.provider].fields[key];
+                if (field.type == _types.ENUM.TYPE_FILE) {
+                    formData.append(key, that.state['destination_' + key].file);
+                } else {
+                    formData.append(key, that.state['destination_' + key]);
+                }
+            });
+
+            fetch('/api/destination/add', {
+                credentials: 'same-origin',
+                method: 'POST',
+                body: formData
+            }).then(function (response) {
+                if (!response.ok) {
+                    _this9.setState({
+                        addDestinationDisabled: false
+                    });
+                    _toaster.AppToaster.show({ message: response.statusText, intent: _core.Intent.DANGER });
+                }
+
+                return response;
+            }).then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                if (!data.error) {
+                    _toaster.AppToaster.show({ message: "Destination was added", intent: _core.Intent.SUCCESS });
+                    _this9.setState({
+                        isAddDestinationOpen: false,
+                        addDestinationDisabled: false,
+                        provider: "local"
+                    });
+                    _this9.getDashboard();
+                } else {
+                    _this9.setState({
+                        addDestinationDisabled: false
+                    });
+                    _toaster.AppToaster.show({ message: data.message, intent: _core.Intent.DANGER });
+                }
+            }).catch(function (err) {
+                _this9.setState({
+                    addDatabaseDisabled: false
+                });
+                _toaster.AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: _core.Intent.DANGER });
+            });
+        }
+    }, {
         key: 'componentWillMount',
         value: function componentWillMount() {
             var that = this;
@@ -464,7 +575,8 @@ var Dashboard = function (_React$Component) {
     }, {
         key: 'componentDidMount',
         value: function componentDidMount() {
-            this.resetOptions(this.state.engine);
+            this.resetEngines(this.state.engine);
+            this.resetProviders(this.state.provider);
         }
     }, {
         key: 'render',
@@ -498,13 +610,13 @@ var Dashboard = function (_React$Component) {
                                 _react2.default.createElement(
                                     _core.FormGroup,
                                     { helperText: 'Choose a name for new database to be able to distinguish it from others', label: 'Name', labelFor: 'database-name', requiredLabel: true },
-                                    _react2.default.createElement('input', { id: 'database-name', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Name', dir: 'auto', value: this.state.name, onChange: this.databaseOptionChange.bind(this, 'name') })
+                                    _react2.default.createElement('input', { id: 'database-name', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Name', dir: 'auto', value: this.state.name, onChange: this.optionChange.bind(this, 'database_name') })
                                 ),
                                 _react2.default.createElement(
                                     _core.RadioGroup,
                                     {
                                         label: 'Database engine',
-                                        onChange: this.databaseOptionChange.bind(this, 'engine'),
+                                        onChange: this.optionChange.bind(this, 'engine'),
                                         selectedValue: this.state.engine
                                     },
                                     Object.keys(_schema2.default.engines).map(function (key) {
@@ -516,7 +628,7 @@ var Dashboard = function (_React$Component) {
                                     return _react2.default.createElement(
                                         _core.FormGroup,
                                         { helperText: field.description, label: field.name, labelFor: 'database-' + key, requiredLabel: true },
-                                        _react2.default.createElement('input', { id: 'database-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state[key], onChange: that.databaseOptionChange.bind(that, key) })
+                                        (field.type == _types.ENUM.TYPE_STRING || field.type == _types.ENUM.TYPE_NUMBER) && _react2.default.createElement('input', { id: 'database-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state['database_' + key], onChange: that.optionChange.bind(that, 'database_' + key) }) || field.type == _types.ENUM.TYPE_FILE && _react2.default.createElement(_core.FileInput, { onInputChange: that.fileChange.bind(that, 'database_' + key), text: that.state['database_' + key].path })
                                     );
                                 }),
                                 _react2.default.createElement(_core.Button, { text: 'Add', intent: _core.Intent.PRIMARY, className: 'pt-large', loading: this.state.addDatabaseDisabled, onClick: this.addDatabase.bind(this) })
@@ -648,7 +760,40 @@ var Dashboard = function (_React$Component) {
                             null,
                             'Destinations'
                         ),
-                        _react2.default.createElement(_core.Button, { text: 'Add new destination', intent: _core.Intent.PRIMARY }),
+                        _react2.default.createElement(_core.Button, { text: 'Add new destination', intent: _core.Intent.PRIMARY, onClick: this.handleAddDestinationOpen.bind(this) }),
+                        _react2.default.createElement(
+                            _core.Collapse,
+                            { isOpen: this.state.isAddDestinationOpen },
+                            _react2.default.createElement(
+                                'div',
+                                { className: 'db-form-default', style: { marginTop: "15px" } },
+                                _react2.default.createElement(
+                                    _core.FormGroup,
+                                    { helperText: 'Choose a name for a new destination to be able to distinguish it from others', label: 'Name', labelFor: 'destination-name', requiredLabel: true },
+                                    _react2.default.createElement('input', { id: 'destination-name', className: 'pt-input pt-intent-primary', type: 'text', placeholder: 'Name', dir: 'auto', value: this.state.destinationName, onChange: this.optionChange.bind(this, 'destination_name') })
+                                ),
+                                _react2.default.createElement(
+                                    _core.RadioGroup,
+                                    {
+                                        label: 'Provider',
+                                        onChange: this.optionChange.bind(this, 'provider'),
+                                        selectedValue: this.state.provider
+                                    },
+                                    Object.keys(_schema2.default.storages).map(function (key) {
+                                        return _react2.default.createElement(_core.Radio, { label: _schema2.default.storages[key].name, value: key });
+                                    })
+                                ),
+                                Object.keys(_schema2.default.storages[this.state.provider].fields).map(function (key) {
+                                    var field = _schema2.default.storages[that.state.provider].fields[key];
+                                    return _react2.default.createElement(
+                                        _core.FormGroup,
+                                        { helperText: field.description, label: field.name, labelFor: 'destination-' + key, requiredLabel: true },
+                                        (field.type == _types.ENUM.TYPE_STRING || field.type == _types.ENUM.TYPE_NUMBER) && _react2.default.createElement('input', { id: 'destination-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state['destination_' + key], onChange: that.optionChange.bind(that, 'destination_' + key) }) || field.type == _types.ENUM.TYPE_FILE && _react2.default.createElement(_core.FileInput, { onInputChange: that.fileChange.bind(that, 'destination_' + key), text: that.state['destination_' + key].path })
+                                    );
+                                }),
+                                _react2.default.createElement(_core.Button, { text: 'Add', intent: _core.Intent.PRIMARY, className: 'pt-large', loading: this.state.addDestinationDisabled, onClick: this.addDestination.bind(this) })
+                            )
+                        ),
                         _react2.default.createElement(
                             'table',
                             { className: 'pt-html-table pt-interactive' },
@@ -703,19 +848,32 @@ var Dashboard = function (_React$Component) {
                                             Object.keys(_schema2.default.storages[destination.provider].fields).map(function (key) {
                                                 if (destination.options[key]) {
                                                     var field = _schema2.default.storages[destination.provider].fields[key];
-                                                    return _react2.default.createElement(
-                                                        'div',
-                                                        null,
-                                                        field.name + ': ',
-                                                        field.masked ? _react2.default.createElement(_maskedtext2.default, { text: database.options[key] }) : destination.options[key]
-                                                    );
+                                                    if (field.type == _types.ENUM.TYPE_FILE) {
+                                                        return _react2.default.createElement(
+                                                            'div',
+                                                            null,
+                                                            field.name + ': ',
+                                                            _react2.default.createElement(
+                                                                'span',
+                                                                { style: { fontStyle: "italic" } },
+                                                                'Uploaded'
+                                                            )
+                                                        );
+                                                    } else {
+                                                        return _react2.default.createElement(
+                                                            'div',
+                                                            null,
+                                                            field.name + ': ',
+                                                            field.masked ? _react2.default.createElement(_maskedtext2.default, { text: database.options[key] }) : destination.options[key]
+                                                        );
+                                                    }
                                                 }
                                             })
                                         ),
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            _react2.default.createElement(_core.Button, { text: 'Delete', intent: _core.Intent.DANGER })
+                                            _react2.default.createElement(_core.Button, { text: 'Delete', intent: _core.Intent.DANGER, onClick: that.deleteDestination.bind(that, destination._id) })
                                         )
                                     );
                                 })
