@@ -511,7 +511,7 @@ router.post('/destination/delete', isAuthenticated, function(req, res, next) {
 });
 
 router.post('/scheduler/add', isAuthenticated, function (req, res, next) {
-    if (req.body.databaseId) {
+    if (req.body.databaseId && req.body.destinationId) {
         Database.findOne({ _id: req.body.databaseId }, function (err, database) {
             if (err) {
                 res.json({
@@ -520,33 +520,42 @@ router.post('/scheduler/add', isAuthenticated, function (req, res, next) {
                 });
             } else {
                 if (database) {
-                    if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path && req.body.rule && Cron.validate(req.body.rule)) {
-                        var newScheduler = new Scheduler({ database: database._id, destination: { type: req.body.destination, path: req.body.path }, rule: req.body.rule });
-                        newScheduler.save(function (err) {
-                            if (err) {
+                    Destination.findOne({ _id: req.body.destinationId }, function(err, destination) {
+                        if (destination) {
+                            if (req.body.rule && Cron.validate(req.body.rule)) {
+                                var newScheduler = new Scheduler({ database: database._id, destination: destination._id, rule: req.body.rule });
+                                newScheduler.save(function (err) {
+                                    if (err) {
+                                        res.json({
+                                            error: true,
+                                            message: "An internal error occurred"
+                                        });
+                                    } else {
+                                        AddSchedule({
+                                            _id: newScheduler._id,
+                                            database: database,
+                                            destination: destination,
+                                            rule: newScheduler.rule
+                                        })
+                                        res.json({
+                                            error: false,
+                                            message: "Task was added"
+                                        });
+                                    }
+                                })
+                            } else {
                                 res.json({
                                     error: true,
-                                    message: "An internal error occurred"
-                                });
-                            } else {
-                                AddSchedule({
-                                    _id: newScheduler._id,
-                                    database: database,
-                                    destination: newScheduler.destination,
-                                    rule: newScheduler.rule
-                                })
-                                res.json({
-                                    error: false,
-                                    message: "Task was added"
+                                    message: "Invalid parameters"
                                 });
                             }
-                        })
-                    } else {
-                        res.json({
-                            error: true,
-                            message: "Invalid parameters"
-                        });
-                    }
+                        } else {
+                            res.json({
+                                error: true,
+                                message: "Couldn't find a destination"
+                            });
+                        }
+                    });
                 } else {
                     res.json({
                         error: true,

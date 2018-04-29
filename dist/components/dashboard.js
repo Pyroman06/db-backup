@@ -65,7 +65,6 @@ var Dashboard = function (_React$Component) {
             isAddTaskOpen: false,
             addTaskDatabase: "",
             addTaskDestination: "local",
-            addTaskPath: "",
             addTaskRule: "",
             addTaskDisabled: false,
             isLogOpen: false,
@@ -90,8 +89,7 @@ var Dashboard = function (_React$Component) {
                 },
                 body: JSON.stringify({
                     databaseId: this.state.addTaskDatabase,
-                    destination: this.state.addTaskDestination,
-                    path: this.state.addTaskPath,
+                    destinationId: this.state.addTaskDestination,
                     rule: this.state.addTaskRule
                 })
             }).then(function (response) {
@@ -113,7 +111,6 @@ var Dashboard = function (_React$Component) {
                         addTaskDisabled: false,
                         addTaskDatabase: "",
                         addTaskDestination: "local",
-                        addTaskPath: "",
                         addTaskRule: ""
                     });
                     _this2.getDashboard();
@@ -465,13 +462,6 @@ var Dashboard = function (_React$Component) {
         value: function addTaskDestinationChange(e) {
             this.setState({
                 addTaskDestination: e.target.value
-            });
-        }
-    }, {
-        key: 'addTaskPathChange',
-        value: function addTaskPathChange(e) {
-            this.setState({
-                addTaskPath: e.target.value
             });
         }
     }, {
@@ -864,7 +854,7 @@ var Dashboard = function (_React$Component) {
                                                             'div',
                                                             null,
                                                             field.name + ': ',
-                                                            field.masked ? _react2.default.createElement(_maskedtext2.default, { text: database.options[key] }) : destination.options[key]
+                                                            field.masked ? _react2.default.createElement(_maskedtext2.default, { text: destination.options[key] }) : destination.options[key]
                                                         );
                                                     }
                                                 }
@@ -904,7 +894,7 @@ var Dashboard = function (_React$Component) {
                                         { className: 'pt-select' },
                                         _react2.default.createElement(
                                             'select',
-                                            { id: 'scheduler-database', onChange: this.addTaskDatabaseChange.bind(this) },
+                                            { id: 'scheduler-database', value: this.state.addTaskDatabase, onChange: this.addTaskDatabaseChange.bind(this) },
                                             _react2.default.createElement(
                                                 'option',
                                                 { selected: true },
@@ -929,7 +919,7 @@ var Dashboard = function (_React$Component) {
                                         { className: 'pt-select' },
                                         _react2.default.createElement(
                                             'select',
-                                            { id: 'scheduler-destination', onChange: this.addTaskDestinationChange.bind(this) },
+                                            { id: 'scheduler-destination', value: this.state.addTaskDestination, onChange: this.addTaskDestinationChange.bind(this) },
                                             _react2.default.createElement(
                                                 'option',
                                                 { selected: true },
@@ -999,7 +989,7 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            (schedule.destination.type == "local" && "Local: " || schedule.destination.type == "s3" && "Amazon S3: ") + schedule.destination.path
+                                            schedule.destination.name
                                         ),
                                         _react2.default.createElement(
                                             'td',

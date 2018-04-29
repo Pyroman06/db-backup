@@ -29,7 +29,6 @@ class Dashboard extends React.Component {
             isAddTaskOpen: false,
             addTaskDatabase: "",
             addTaskDestination: "local",
-            addTaskPath: "",
             addTaskRule: "",
             addTaskDisabled: false,
             isLogOpen: false,
@@ -49,8 +48,7 @@ class Dashboard extends React.Component {
             },
             body: JSON.stringify({
                 databaseId: this.state.addTaskDatabase,
-                destination: this.state.addTaskDestination,
-                path: this.state.addTaskPath,
+                destinationId: this.state.addTaskDestination,
                 rule: this.state.addTaskRule
             })
         })
@@ -73,7 +71,6 @@ class Dashboard extends React.Component {
                     addTaskDisabled: false,
                     addTaskDatabase: "",
                     addTaskDestination: "local",
-                    addTaskPath: "",
                     addTaskRule: ""
                 });
                 this.getDashboard();
@@ -412,12 +409,6 @@ class Dashboard extends React.Component {
         });
     }
 
-    addTaskPathChange(e) {
-        this.setState({
-            addTaskPath: e.target.value
-        });
-    }
-
     addTaskDatabaseChange(e) {
         this.setState({
             addTaskDatabase: e.target.value
@@ -681,7 +672,7 @@ class Dashboard extends React.Component {
                                                                             if (field.type == ENUM.TYPE_FILE) {
                                                                                 return <div>{`${field.name}: `}<span style={{fontStyle: "italic"}}>Uploaded</span></div>
                                                                             } else {
-                                                                                return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ database.options[key] } /> : destination.options[key] }</div>
+                                                                                return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ destination.options[key] } /> : destination.options[key] }</div>
                                                                             }
                                                                         }
                                                                     }) 
@@ -706,7 +697,7 @@ class Dashboard extends React.Component {
                                 <label className="pt-label">
                                     Database
                                     <div className="pt-select">
-                                        <select id="scheduler-database" onChange={this.addTaskDatabaseChange.bind(this)}>
+                                        <select id="scheduler-database" value={this.state.addTaskDatabase} onChange={this.addTaskDatabaseChange.bind(this)}>
                                             <option selected>Choose a database...</option>
                                             {
                                                 this.state.databases.map(function(database) {
@@ -719,7 +710,7 @@ class Dashboard extends React.Component {
                                 <label className="pt-label">
                                     Destination
                                     <div className="pt-select">
-                                        <select id="scheduler-destination" onChange={this.addTaskDestinationChange.bind(this)}>
+                                        <select id="scheduler-destination" value={this.state.addTaskDestination} onChange={this.addTaskDestinationChange.bind(this)}>
                                             <option selected>Choose a destination...</option>
                                             {
                                                 this.state.destinations.map(function(destination) {
@@ -751,7 +742,7 @@ class Dashboard extends React.Component {
                                             this.state.schedules.map(function(schedule) {
                                                 return  <tr>
                                                             <td>{schedule.database.name}</td>
-                                                            <td>{(schedule.destination.type == "local" && "Local: " || schedule.destination.type == "s3" && "Amazon S3: ") + (schedule.destination.path)}</td>
+                                                            <td>{schedule.destination.name}</td>
                                                             <td>{schedule.rule}</td>
                                                             <td>
                                                                 <Button text="Delete" intent={ Intent.DANGER } onClick={that.removeTask.bind(that, schedule._id)} />
