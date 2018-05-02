@@ -24,8 +24,7 @@ class Dashboard extends React.Component {
             engine: "mysql",
             provider: "local",
             manualBackupDatabaseId: "",
-            manualBackupDestination: "local",
-            manualBackupPath: "",
+            manualBackupDestinationId: "",
             isAddTaskOpen: false,
             addTaskDatabase: "",
             addTaskDestination: "local",
@@ -345,15 +344,14 @@ class Dashboard extends React.Component {
     manualBackup(databaseId) {
         this.setState({
             manualBackupDatabaseId: databaseId,
-            manualBackupDestination: "local",
-            manualBackupPath: "",
+            manualBackupDestinationId: "",
             isManualBackupOpen: true
         });
     }
 
     manualBackupDestinationChange(e) {
         this.setState({
-            manualBackupDestination: e.target.value
+            manualBackupDestinationId: e.target.value
         });
     }
 
@@ -367,7 +365,7 @@ class Dashboard extends React.Component {
             },
             body: JSON.stringify({
                 databaseId: this.state.manualBackupDatabaseId,
-                destination: this.state.manualBackupDestination
+                destinationId: this.state.manualBackupDestinationId
             })
         })
         .then((response) => {
@@ -762,6 +760,7 @@ class Dashboard extends React.Component {
                                 <tr>
                                     <th>Database</th>
                                     <th>Destination</th>
+                                    <th>Filename</th>
                                     <th>Time</th>
                                     <th>Type</th>
                                     <th>Status</th>
@@ -774,8 +773,9 @@ class Dashboard extends React.Component {
                                     {
                                         this.state.backups.map(function(backup, index) {
                                             return  <tr>
-                                                        <td>{backup.database && backup.database.name || "Removed"}</td>
-                                                        <td>{(backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + (backup.destination.path)}</td>
+                                                        <td>{backup.database ? backup.database.name : "Removed"}</td>
+                                                        <td>{backup.destination ? backup.destination.name : "Removed"}</td>
+                                                        <td>{backup.filename || "-"}</td>
                                                         <td>{new Date(backup.startDate).toLocaleString()}</td>
                                                         <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
                                                         <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag></td>

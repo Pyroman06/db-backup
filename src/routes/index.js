@@ -170,7 +170,7 @@ router.post('/dashboard/get', isAuthenticated, function (req, res, next) {
                 message: "An internal error occurred"
             });
         } else {
-            Destination.find(function (err, destinations) {
+            Destination.find({}, function (err, destinations) {
                 if (err) {
                     res.json({
                         error: true,
@@ -184,7 +184,7 @@ router.post('/dashboard/get', isAuthenticated, function (req, res, next) {
                                 message: "An internal error occurred"
                             });
                         } else {
-                            Backup.find({}).populate('database').sort({ 'startDate': -1, '_id': -1 }).limit(20)
+                            Backup.find({}).populate('database').populate('destination').sort({ 'startDate': -1, '_id': -1 }).limit(20)
                                 .exec(function (err, backups) {
                                     if (err) {
                                         res.json({
@@ -317,7 +317,7 @@ router.post('/database/delete', isAuthenticated, function (req, res, next) {
 });
 
 router.post('/database/manualbackup', isAuthenticated, function (req, res, next) {
-    if (req.body.databaseId) {
+    if (req.body.databaseId && req.body.destinationId) {
         Database.findOne({ _id: req.body.databaseId }, function (err, database) {
             if (err) {
                 res.json({
@@ -326,42 +326,39 @@ router.post('/database/manualbackup', isAuthenticated, function (req, res, next)
                 });
             } else {
                 if (database) {
-                    if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path) {
-                        var localBackup = new Backup({
-                            database: database._id,
-                            destination: { type: req.body.destination, path: req.body.path },
-                            startDate: Date.now(),
-                            type: "manual",
-                            status: "queued",
-                            log: ""
-                        });
+                    Destination.findOne({ _id: req.body.destinationId }, function(err, destination) {
+                        if (destination) {
+                            var localBackup = new Backup({
+                                database: database._id,
+                                destination: destination._id,
+                                filename: null,
+                                startDate: Date.now(),
+                                type: "manual",
+                                status: "queued",
+                                log: ""
+                            });
 
-                        localBackup.save(function (err) {
-                            if (err) {
-                                throw err;
-                            } else {
-                                Backup.findOne({ _id: localBackup._id }).populate('database').exec(function (err, backup) {
-                                    if (err) {
-                                        res.json({
-                                            error: true,
-                                            message: "Invalid destination or path"
-                                        });
-                                    } else {
-                                        BackupQueue.push(backup);
-                                        res.json({
-                                            error: false,
-                                            message: "Backup was added to the queue"
-                                        });
-                                    }
-                                });
-                            }
-                        })
-                    } else {
-                        res.json({
-                            error: true,
-                            message: "Invalid destination or path"
-                        });
-                    }
+                            localBackup.save(function (err) {
+                                if (err) {
+                                    throw err;
+                                } else {
+                                    var backupObj = { ...localBackup }
+                                    backupObj.database = { ...database }
+                                    backupObj.destination = { ...destination }
+                                    BackupQueue.push(backupObj);
+                                    res.json({
+                                        error: false,
+                                        message: "Backup was added to the queue"
+                                    });
+                                }
+                            })
+                        } else {
+                            res.json({
+                                error: true,
+                                message: "Invalid destination or path"
+                            });
+                        }
+                    })
                 } else {
                     res.json({
                         error: true,

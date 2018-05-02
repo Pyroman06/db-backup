@@ -60,8 +60,7 @@ var Dashboard = function (_React$Component) {
             engine: "mysql",
             provider: "local",
             manualBackupDatabaseId: "",
-            manualBackupDestination: "local",
-            manualBackupPath: "",
+            manualBackupDestinationId: "",
             isAddTaskOpen: false,
             addTaskDatabase: "",
             addTaskDestination: "local",
@@ -396,8 +395,7 @@ var Dashboard = function (_React$Component) {
         value: function manualBackup(databaseId) {
             this.setState({
                 manualBackupDatabaseId: databaseId,
-                manualBackupDestination: "local",
-                manualBackupPath: "",
+                manualBackupDestinationId: "",
                 isManualBackupOpen: true
             });
         }
@@ -405,7 +403,7 @@ var Dashboard = function (_React$Component) {
         key: 'manualBackupDestinationChange',
         value: function manualBackupDestinationChange(e) {
             this.setState({
-                manualBackupDestination: e.target.value
+                manualBackupDestinationId: e.target.value
             });
         }
     }, {
@@ -422,7 +420,7 @@ var Dashboard = function (_React$Component) {
                 },
                 body: JSON.stringify({
                     databaseId: this.state.manualBackupDatabaseId,
-                    destination: this.state.manualBackupDestination
+                    destinationId: this.state.manualBackupDestinationId
                 })
             }).then(function (response) {
                 if (!response.ok) {
@@ -1036,6 +1034,11 @@ var Dashboard = function (_React$Component) {
                                     _react2.default.createElement(
                                         'th',
                                         null,
+                                        'Filename'
+                                    ),
+                                    _react2.default.createElement(
+                                        'th',
+                                        null,
                                         'Time'
                                     ),
                                     _react2.default.createElement(
@@ -1065,12 +1068,17 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            backup.database && backup.database.name || "Removed"
+                                            backup.database ? backup.database.name : "Removed"
                                         ),
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            (backup.destination.type == "local" && "Local: " || backup.destination.type == "s3" && "Amazon S3: ") + backup.destination.path
+                                            backup.destination ? backup.destination.name : "Removed"
+                                        ),
+                                        _react2.default.createElement(
+                                            'td',
+                                            null,
+                                            backup.filename || "-"
                                         ),
                                         _react2.default.createElement(
                                             'td',

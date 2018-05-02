@@ -26,6 +26,10 @@ input {
     margin-bottom: 10px !important;
 }
 
+tbody > tr > td {
+    word-wrap: break-word;
+}
+
 .navbar-inverse {
     background-color: #10161A !important;
 }

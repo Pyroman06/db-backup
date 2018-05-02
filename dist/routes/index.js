@@ -4,6 +4,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _express = require('express');
 
 var _passport = require('passport');
@@ -223,7 +225,7 @@ router.post('/dashboard/get', isAuthenticated, function (req, res, next) {
                 message: "An internal error occurred"
             });
         } else {
-            _destination2.default.find(function (err, destinations) {
+            _destination2.default.find({}, function (err, destinations) {
                 if (err) {
                     res.json({
                         error: true,
@@ -237,7 +239,7 @@ router.post('/dashboard/get', isAuthenticated, function (req, res, next) {
                                 message: "An internal error occurred"
                             });
                         } else {
-                            _backup2.default.find({}).populate('database').sort({ 'startDate': -1, '_id': -1 }).limit(20).exec(function (err, backups) {
+                            _backup2.default.find({}).populate('database').populate('destination').sort({ 'startDate': -1, '_id': -1 }).limit(20).exec(function (err, backups) {
                                 if (err) {
                                     res.json({
                                         error: true,
@@ -369,7 +371,7 @@ router.post('/database/delete', isAuthenticated, function (req, res, next) {
 });
 
 router.post('/database/manualbackup', isAuthenticated, function (req, res, next) {
-    if (req.body.databaseId) {
+    if (req.body.databaseId && req.body.destinationId) {
         _database2.default.findOne({ _id: req.body.databaseId }, function (err, database) {
             if (err) {
                 res.json({
@@ -378,42 +380,39 @@ router.post('/database/manualbackup', isAuthenticated, function (req, res, next)
                 });
             } else {
                 if (database) {
-                    if ((req.body.destination == "s3" || req.body.destination == "local") && req.body.path) {
-                        var localBackup = new _backup2.default({
-                            database: database._id,
-                            destination: { type: req.body.destination, path: req.body.path },
-                            startDate: Date.now(),
-                            type: "manual",
-                            status: "queued",
-                            log: ""
-                        });
+                    _destination2.default.findOne({ _id: req.body.destinationId }, function (err, destination) {
+                        if (destination) {
+                            var localBackup = new _backup2.default({
+                                database: database._id,
+                                destination: destination._id,
+                                filename: null,
+                                startDate: Date.now(),
+                                type: "manual",
+                                status: "queued",
+                                log: ""
+                            });
 
-                        localBackup.save(function (err) {
-                            if (err) {
-                                throw err;
-                            } else {
-                                _backup2.default.findOne({ _id: localBackup._id }).populate('database').exec(function (err, backup) {
-                                    if (err) {
-                                        res.json({
-                                            error: true,
-                                            message: "Invalid destination or path"
-                                        });
-                                    } else {
-                                        _queue.BackupQueue.push(backup);
-                                        res.json({
-                                            error: false,
-                                            message: "Backup was added to the queue"
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                    } else {
-                        res.json({
-                            error: true,
-                            message: "Invalid destination or path"
-                        });
-                    }
+                            localBackup.save(function (err) {
+                                if (err) {
+                                    throw err;
+                                } else {
+                                    var backupObj = _extends({}, localBackup);
+                                    backupObj.database = _extends({}, database);
+                                    backupObj.destination = _extends({}, destination);
+                                    _queue.BackupQueue.push(backupObj);
+                                    res.json({
+                                        error: false,
+                                        message: "Backup was added to the queue"
+                                    });
+                                }
+                            });
+                        } else {
+                            res.json({
+                                error: true,
+                                message: "Invalid destination or path"
+                            });
+                        }
+                    });
                 } else {
                     res.json({
                         error: true,

@@ -4,130 +4,46 @@ import Scheduler from './models/scheduler';
 import Cron from 'node-cron';
 import fs from 'fs';
 import { AWSUploadToS3 } from './aws';
+import Providers from './providers/server';
 
 var Tasks = {}
 
 export var BackupQueue = new Queue(function (input, cb) {
-    const { spawn } = require( 'child_process' )
-    var destination = '/tmp';
-    if (input.destination.type == "local") {
-        destination = input.destination.path;
-    }
-    if (input.database.engine == "mongodb") {
-        var fileName = input.database._id + "_" + input.database.engine + "_" + (+ new Date(input.startDate)) + ".gz";
-        var stderr = "";
-        const mongodump = spawn( 'mongodump', [ '--uri', input.database.options.uri, '--gzip', '--archive=' + destination + "/" + fileName ] );
-        mongodump.stderr.on('data', data => {
-            stderr = stderr + data;
-        });
-        mongodump.on('close', code => {
-            if (code == 0) {
-                if (input.destination.type == "s3") {
-                    AWSUploadToS3(input.destination.path, destination + "/" + fileName, fileName, function(err, res) {
-                        if (err) {
-                            input.status = "failed";
-                            input.log = stderr + err;
-                            input.save(function(err) {
-                                if (err) {
-                                    throw err;
-                                }
-                            })
-                        } else {
-                            input.status = "finished";
-                            input.log = stderr + res;
-                            input.save(function(err) {
-                                if (err) {
-                                    throw err;
-                                }
-                            })
-                        }
-                    })
-                } else {
-                    input.status = "finished";
-                    input.log = stderr;
-                    input.save(function(err) {
+    let databaseMethods = Providers.engines[input.database.engine].methods;
+    var filename = databaseMethods.generateFilename(input);
+    Backup.findOne({_id: input._id}, function(err, backup) {
+        databaseMethods.performBackup(filename, input, function(err, backupLog, path) {
+            if (err) {
+                backup.log = backupLog;
+                backup.status = "failed";
+                backup.save(function(err) {
+                    if (err) {
+                        throw err;
+                    }
+
+                    cb(null, backup.status);
+                })
+            } else {
+                let storageMethods = Providers.storages[input.destination.provider].methods;
+                storageMethods.storeBackup(filename, path, input, function(err, storageLog) {
+                    backup.log = backupLog + storageLog;
+                    if (err) {
+                        backup.status = "failed";
+                    } else {
+                        backup.status = "finished";
+                        backup.filename = filename;
+                    }
+                    backup.save(function(err) {
                         if (err) {
                             throw err;
                         }
-                    })
-                }
-            } else {
-                input.status = "failed";
-                input.log = stderr;
-                input.save(function(err) {
-                    if (err) {
-                        throw err;
-                    }
-                })
-            }
-        });
-    } else if (input.database.engine == "mysql") {
-        const mysqldump = spawn( 'mysqldump', [ '--all-databases', '--user=' + input.database.options.username, '--password=' + input.database.options.password, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--verbose' ] );
-        var stderr = "";
-        var stdout = "";
-        mysqldump.stdout.on('data', data => {
-            stdout = stdout + data;
-        });
-        mysqldump.stderr.on('data', data => {
-            stderr = stderr + data;
-        });
-        mysqldump.on('close', code => {
-            if (code == 0) {
-                var fileName = input.database._id + "_" + input.database.engine + "_" + (+ new Date(input.startDate)) + ".sql";
-                fs.writeFile(destination + "/" + fileName, stdout, function(err) {
-                    if (err) {
-                        input.status = "failed";
-                        input.log = stderr + err;
-                        input.save(function(err) {
-                            if (err) {
-                                throw err;
-                            }
-                        })
-                    } else {
-                        if (input.destination.type == "s3") {
-                            AWSUploadToS3(input.destination.path, destination + "/" + fileName, fileName, function(err, res) {
-                                if (err) {
-                                    input.status = "failed";
-                                    input.log = stderr + err;
-                                    input.save(function(err) {
-                                        if (err) {
-                                            throw err;
-                                        }
-                                    })
-                                } else {
-                                    input.status = "finished";
-                                    input.log = stderr + res;
-                                    input.save(function(err) {
-                                        if (err) {
-                                            throw err;
-                                        }
-                                    })
-                                }
-                            })
-                        } else {
-                            input.status = "finished";
-                            input.log = stderr;
-                            input.save(function(err) {
-                                if (err) {
-                                    throw err;
-                                }
-                            })
-                        }
-                    }
-                })
-            } else {
-                input.status = "failed";
-                input.log = stderr;
-                input.save(function(err) {
-                    if (err) {
-                        throw err;
-                    }
-                })
-            }
-        });
-    }
 
-    cb(null, result);
+                        cb(null, backup.status);
+                    })
+                });
+            }
+        });
+    });
 })
 
 export function AddSchedule(schedule) {
@@ -158,7 +74,7 @@ export function RemoveSchedule(id) {
 }
 
 export function InitData() {
-    Backup.find({}).populate('database').exec(function(err, backups) {
+    Backup.find({}).populate('database').populate('destination').exec(function(err, backups) {
         if (err) {
             throw err;
         } else {
@@ -170,7 +86,7 @@ export function InitData() {
         }
     });
 
-    Scheduler.find({}).populate('database').exec(function(err, schedules) {
+    Scheduler.find({}).populate('database').populate('destination').exec(function(err, schedules) {
         schedules.map(function(schedule) {
             AddSchedule(schedule);
         });

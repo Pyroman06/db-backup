@@ -5,7 +5,8 @@ var Schema = mongoose.Schema;
 
 module.exports = mongoose.model('Backup', new Schema({
     database: { type: Schema.Types.ObjectId, ref: 'Database' },
-    destinations: Object,
+    destination: { type: Schema.Types.ObjectId, ref: 'Destination' },
+    filename: String,
     startDate: Date,
     type: String,
     status: String,

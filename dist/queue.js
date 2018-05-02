@@ -30,133 +30,50 @@ var _fs2 = _interopRequireDefault(_fs);
 
 var _aws = require('./aws');
 
+var _server = require('./providers/server');
+
+var _server2 = _interopRequireDefault(_server);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var Tasks = {};
 
 var BackupQueue = exports.BackupQueue = new _betterQueue2.default(function (input, cb) {
-    var _require = require('child_process'),
-        spawn = _require.spawn;
+    var databaseMethods = _server2.default.engines[input.database.engine].methods;
+    var filename = databaseMethods.generateFilename(input);
+    _backup2.default.findOne({ _id: input._id }, function (err, backup) {
+        databaseMethods.performBackup(filename, input, function (err, backupLog, path) {
+            if (err) {
+                backup.log = backupLog;
+                backup.status = "failed";
+                backup.save(function (err) {
+                    if (err) {
+                        throw err;
+                    }
 
-    var destination = '/tmp';
-    if (input.destination.type == "local") {
-        destination = input.destination.path;
-    }
-    if (input.database.engine == "mongodb") {
-        var fileName = input.database._id + "_" + input.database.engine + "_" + +new Date(input.startDate) + ".gz";
-        var stderr = "";
-        var mongodump = spawn('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive=' + destination + "/" + fileName]);
-        mongodump.stderr.on('data', function (data) {
-            stderr = stderr + data;
-        });
-        mongodump.on('close', function (code) {
-            if (code == 0) {
-                if (input.destination.type == "s3") {
-                    (0, _aws.AWSUploadToS3)(input.destination.path, destination + "/" + fileName, fileName, function (err, res) {
-                        if (err) {
-                            input.status = "failed";
-                            input.log = stderr + err;
-                            input.save(function (err) {
-                                if (err) {
-                                    throw err;
-                                }
-                            });
-                        } else {
-                            input.status = "finished";
-                            input.log = stderr + res;
-                            input.save(function (err) {
-                                if (err) {
-                                    throw err;
-                                }
-                            });
-                        }
-                    });
-                } else {
-                    input.status = "finished";
-                    input.log = stderr;
-                    input.save(function (err) {
+                    cb(null, backup.status);
+                });
+            } else {
+                var storageMethods = _server2.default.storages[input.destination.provider].methods;
+                storageMethods.storeBackup(filename, path, input, function (err, storageLog) {
+                    backup.log = backupLog + storageLog;
+                    if (err) {
+                        backup.status = "failed";
+                    } else {
+                        backup.status = "finished";
+                        backup.filename = filename;
+                    }
+                    backup.save(function (err) {
                         if (err) {
                             throw err;
                         }
-                    });
-                }
-            } else {
-                input.status = "failed";
-                input.log = stderr;
-                input.save(function (err) {
-                    if (err) {
-                        throw err;
-                    }
-                });
-            }
-        });
-    } else if (input.database.engine == "mysql") {
-        var mysqldump = spawn('mysqldump', ['--all-databases', '--user=' + input.database.options.username, '--password=' + input.database.options.password, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--verbose']);
-        var stderr = "";
-        var stdout = "";
-        mysqldump.stdout.on('data', function (data) {
-            stdout = stdout + data;
-        });
-        mysqldump.stderr.on('data', function (data) {
-            stderr = stderr + data;
-        });
-        mysqldump.on('close', function (code) {
-            if (code == 0) {
-                var fileName = input.database._id + "_" + input.database.engine + "_" + +new Date(input.startDate) + ".sql";
-                _fs2.default.writeFile(destination + "/" + fileName, stdout, function (err) {
-                    if (err) {
-                        input.status = "failed";
-                        input.log = stderr + err;
-                        input.save(function (err) {
-                            if (err) {
-                                throw err;
-                            }
-                        });
-                    } else {
-                        if (input.destination.type == "s3") {
-                            (0, _aws.AWSUploadToS3)(input.destination.path, destination + "/" + fileName, fileName, function (err, res) {
-                                if (err) {
-                                    input.status = "failed";
-                                    input.log = stderr + err;
-                                    input.save(function (err) {
-                                        if (err) {
-                                            throw err;
-                                        }
-                                    });
-                                } else {
-                                    input.status = "finished";
-                                    input.log = stderr + res;
-                                    input.save(function (err) {
-                                        if (err) {
-                                            throw err;
-                                        }
-                                    });
-                                }
-                            });
-                        } else {
-                            input.status = "finished";
-                            input.log = stderr;
-                            input.save(function (err) {
-                                if (err) {
-                                    throw err;
-                                }
-                            });
-                        }
-                    }
-                });
-            } else {
-                input.status = "failed";
-                input.log = stderr;
-                input.save(function (err) {
-                    if (err) {
-                        throw err;
-                    }
-                });
-            }
-        });
-    }
 
-    cb(null, result);
+                        cb(null, backup.status);
+                    });
+                });
+            }
+        });
+    });
 });
 
 function AddSchedule(schedule) {
@@ -187,7 +104,7 @@ function RemoveSchedule(id) {
 }
 
 function InitData() {
-    _backup2.default.find({}).populate('database').exec(function (err, backups) {
+    _backup2.default.find({}).populate('database').populate('destination').exec(function (err, backups) {
         if (err) {
             throw err;
         } else {
@@ -199,7 +116,7 @@ function InitData() {
         }
     });
 
-    _scheduler2.default.find({}).populate('database').exec(function (err, schedules) {
+    _scheduler2.default.find({}).populate('database').populate('destination').exec(function (err, schedules) {
         schedules.map(function (schedule) {
             AddSchedule(schedule);
         });
