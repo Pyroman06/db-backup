@@ -1137,7 +1137,7 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            _react2.default.createElement(_core.Button, { text: 'Download', intent: _core.Intent.PRIMARY, onClick: that.openDownload.bind(that, index) })
+                                            backup.status == "finished" ? _react2.default.createElement(_core.Button, { text: 'Download', intent: _core.Intent.PRIMARY, onClick: that.openDownload.bind(that, index) }) : null
                                         )
                                     );
                                 }),

@@ -8,57 +8,110 @@ import Providers from './providers/server';
 
 var Tasks = {}
 
-function CalculateHashes(buf) {
-    let md5 = Crypto.createHash('md5').update(buf).digest('hex');
-    let sha1 = Crypto.createHash('sha1').update(buf).digest('hex');
-    let sha256 = Crypto.createHash('sha256').update(buf).digest('hex');
-    let sha512 = Crypto.createHash('sha512').update(buf).digest('hex');
+function CalculateHashes(cb) {
+    let md5Val, sha1Val, sha256Val, sha512Val;
 
-    return {md5, sha1, sha256, sha512};
+    function CheckHashes() {
+        if (md5Val && sha1Val && sha256Val && sha512Val){
+            cb({md5: md5Val, sha1: sha1Val, sha256: sha256Val, sha512: sha512Val});
+        }
+    }
+
+    let md5 = Crypto.createHash('md5');
+    let sha1 = Crypto.createHash('sha1');
+    let sha256 = Crypto.createHash('sha256');
+    let sha512 = Crypto.createHash('sha512');
+
+    md5.on('readable', () => {
+        const data = md5.read();
+        if (data) {
+            md5Val = data.toString('hex');
+            CheckHashes();
+        }
+    })
+
+    sha1.on('readable', () => {
+        const data = sha1.read();
+        if (data) {
+            sha1Val = data.toString('hex');
+            CheckHashes();
+        }
+    })
+    
+    sha256.on('readable', () => {
+        const data = sha256.read();
+        if (data) {
+            sha512Val = data.toString('hex');
+            CheckHashes();
+        }
+    })
+
+    sha512.on('readable', () => {
+        const data = sha512.read();
+        if (data) {
+            sha256Val = data.toString('hex');
+            CheckHashes();
+        }
+    })
+
+    return [ md5, sha1, sha256, sha512 ];
 }
 
 var BackupQueue = new Queue(function (input, cb) {
+    let bLog;
+    let storageMethods = Providers.storages[input.destination.provider].methods;
     let databaseMethods = Providers.engines[input.database.engine].methods;
     var filename = databaseMethods.generateFilename(input);
-    Backup.findOne({_id: input._id}, function(err, backup) {
-        databaseMethods.performBackup(input, function(err, backupLog, buf) {
+    let storageStream = storageMethods.storeBackup(filename, input, function (err, storageLog) {
+        input.log = bLog + storageLog;
+        if (err) {
+            input.status = "failed";
+        } else {
+            input.status = "finished";
+            input.filename = filename;
+        }
+        input.save(function (err) {
             if (err) {
-                backup.log = backupLog;
-                backup.status = "failed";
-                backup.save(function(err) {
-                    if (err) {
-                        throw err;
-                    }
+                throw err;
+            }
 
-                    cb(null, backup.status);
-                })
-            } else {
-                let hashList = CalculateHashes(buf);
-                let storageMethods = Providers.storages[input.destination.provider].methods;
-                storageMethods.storeBackup(filename, buf, input, function(err, storageLog) {
-                    backup.log = backupLog + storageLog;
-                    if (err) {
-                        backup.status = "failed";
-                    } else {
-                        backup.status = "finished";
-                        backup.filename = filename;
-                        backup.hashes = hashList;
-                    }
-                    backup.save(function(err) {
-                        if (err) {
-                            throw err;
-                        }
+            if (input.hashes) {
+                cb(null, input.status);
+            }
+        })
+    });
 
-                        cb(null, backup.status);
-                    })
-                });
+    let hashStreams = CalculateHashes(function(hashes) {
+        input.hashes = hashes;
+        input.save(function (err) {
+            if (err) {
+                throw err;
+            }
+
+            if (input.status == "completed") {
+                cb(null, input.status);
             }
         });
+    })
+    databaseMethods.performBackup(input, hashStreams, storageStream, function (err, backupLog, buf) {
+        if (err) {
+            input.log = backupLog;
+            input.status = "failed";
+            input.save(function (err) {
+                if (err) {
+                    throw err;
+                }
+
+                cb(null, input.status);
+            })
+        } else {
+            bLog = backupLog;
+        }
     });
 })
 
 function AddSchedule(schedule) {
-    Tasks[schedule._id] = Cron.schedule(schedule.rule, function() {
+    Tasks[schedule._id] = Cron.schedule(schedule.rule, function () {
         var newBackup = new Backup({
             database: schedule.database._id,
             destination: schedule.destination,
@@ -70,11 +123,11 @@ function AddSchedule(schedule) {
             log: ""
         })
 
-        newBackup.save(function(err) {
+        newBackup.save(function (err) {
             if (err) {
                 throw err;
             } else {
-                Backup.findOne({_id: newBackup._id}).populate('database').populate('destination').exec(function(err, backup) {
+                Backup.findOne({ _id: newBackup._id }).populate('database').populate('destination').exec(function (err, backup) {
                     BackupQueue.push(backup);
                 })
             }
@@ -87,11 +140,11 @@ function RemoveSchedule(id) {
 }
 
 function InitData() {
-    Backup.find({}).populate('database').populate('destination').exec(function(err, backups) {
+    Backup.find({}).populate('database').populate('destination').exec(function (err, backups) {
         if (err) {
             throw err;
         } else {
-            backups.map(function(backupObj) {
+            backups.map(function (backupObj) {
                 if (backupObj.status == "queued") {
                     BackupQueue.push(backupObj);
                 }
@@ -99,11 +152,11 @@ function InitData() {
         }
     });
 
-    Scheduler.find({}).populate('database').populate('destination').exec(function(err, schedules) {
-        schedules.map(function(schedule) {
+    Scheduler.find({}).populate('database').populate('destination').exec(function (err, schedules) {
+        schedules.map(function (schedule) {
             AddSchedule(schedule);
         });
     });
 }
 
-export { BackupQueue, AddSchedule, RemoveSchedule, InitData};
+export { BackupQueue, AddSchedule, RemoveSchedule, InitData };

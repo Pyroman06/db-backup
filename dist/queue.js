@@ -37,52 +37,108 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var Tasks = {};
 
-function CalculateHashes(buf) {
-    var md5 = _crypto2.default.createHash('md5').update(buf).digest('hex');
-    var sha1 = _crypto2.default.createHash('sha1').update(buf).digest('hex');
-    var sha256 = _crypto2.default.createHash('sha256').update(buf).digest('hex');
-    var sha512 = _crypto2.default.createHash('sha512').update(buf).digest('hex');
+function CalculateHashes(cb) {
+    var md5Val = void 0,
+        sha1Val = void 0,
+        sha256Val = void 0,
+        sha512Val = void 0;
 
-    return { md5: md5, sha1: sha1, sha256: sha256, sha512: sha512 };
+    function CheckHashes() {
+        if (md5Val && sha1Val && sha256Val && sha512Val) {
+            cb({ md5: md5Val, sha1: sha1Val, sha256: sha256Val, sha512: sha512Val });
+        }
+    }
+
+    var md5 = _crypto2.default.createHash('md5');
+    var sha1 = _crypto2.default.createHash('sha1');
+    var sha256 = _crypto2.default.createHash('sha256');
+    var sha512 = _crypto2.default.createHash('sha512');
+
+    md5.on('readable', function () {
+        var data = md5.read();
+        if (data) {
+            md5Val = data.toString('hex');
+            CheckHashes();
+        }
+    });
+
+    sha1.on('readable', function () {
+        var data = sha1.read();
+        if (data) {
+            sha1Val = data.toString('hex');
+            CheckHashes();
+        }
+    });
+
+    sha256.on('readable', function () {
+        var data = sha256.read();
+        if (data) {
+            sha512Val = data.toString('hex');
+            CheckHashes();
+        }
+    });
+
+    sha512.on('readable', function () {
+        var data = sha512.read();
+        if (data) {
+            sha256Val = data.toString('hex');
+            CheckHashes();
+        }
+    });
+
+    return [md5, sha1, sha256, sha512];
 }
 
 var BackupQueue = new _betterQueue2.default(function (input, cb) {
+    var bLog = void 0;
+    var storageMethods = _server2.default.storages[input.destination.provider].methods;
     var databaseMethods = _server2.default.engines[input.database.engine].methods;
     var filename = databaseMethods.generateFilename(input);
-    _backup2.default.findOne({ _id: input._id }, function (err, backup) {
-        databaseMethods.performBackup(input, function (err, backupLog, buf) {
+    var storageStream = storageMethods.storeBackup(filename, input, function (err, storageLog) {
+        input.log = bLog + storageLog;
+        if (err) {
+            input.status = "failed";
+        } else {
+            input.status = "finished";
+            input.filename = filename;
+        }
+        input.save(function (err) {
             if (err) {
-                backup.log = backupLog;
-                backup.status = "failed";
-                backup.save(function (err) {
-                    if (err) {
-                        throw err;
-                    }
+                throw err;
+            }
 
-                    cb(null, backup.status);
-                });
-            } else {
-                var hashList = CalculateHashes(buf);
-                var storageMethods = _server2.default.storages[input.destination.provider].methods;
-                storageMethods.storeBackup(filename, buf, input, function (err, storageLog) {
-                    backup.log = backupLog + storageLog;
-                    if (err) {
-                        backup.status = "failed";
-                    } else {
-                        backup.status = "finished";
-                        backup.filename = filename;
-                        backup.hashes = hashList;
-                    }
-                    backup.save(function (err) {
-                        if (err) {
-                            throw err;
-                        }
-
-                        cb(null, backup.status);
-                    });
-                });
+            if (input.hashes) {
+                cb(null, input.status);
             }
         });
+    });
+
+    var hashStreams = CalculateHashes(function (hashes) {
+        input.hashes = hashes;
+        input.save(function (err) {
+            if (err) {
+                throw err;
+            }
+
+            if (input.status == "completed") {
+                cb(null, input.status);
+            }
+        });
+    });
+    databaseMethods.performBackup(input, hashStreams, storageStream, function (err, backupLog, buf) {
+        if (err) {
+            input.log = backupLog;
+            input.status = "failed";
+            input.save(function (err) {
+                if (err) {
+                    throw err;
+                }
+
+                cb(null, input.status);
+            });
+        } else {
+            bLog = backupLog;
+        }
     });
 });
 

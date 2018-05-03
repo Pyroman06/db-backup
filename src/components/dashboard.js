@@ -799,7 +799,11 @@ class Dashboard extends React.Component {
                                                             <Button text="Log" intent={ Intent.PRIMARY } onClick={that.openLog.bind(that, index)} />
                                                         </td>
                                                         <td>
-                                                            <Button text="Download" intent={ Intent.PRIMARY } onClick={that.openDownload.bind(that, index)} />
+                                                            {
+                                                                backup.status == "finished" ?
+                                                                <Button text="Download" intent={ Intent.PRIMARY } onClick={that.openDownload.bind(that, index)} />
+                                                                : null
+                                                            }
                                                         </td>
                                                     </tr>
                                         })
