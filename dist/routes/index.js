@@ -4,8 +4,6 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
 var _express = require('express');
 
 var _passport = require('passport');
@@ -389,6 +387,7 @@ router.post('/database/manualbackup', isAuthenticated, function (req, res, next)
                                 startDate: Date.now(),
                                 type: "manual",
                                 status: "queued",
+                                hashes: {},
                                 log: ""
                             });
 
@@ -396,13 +395,12 @@ router.post('/database/manualbackup', isAuthenticated, function (req, res, next)
                                 if (err) {
                                     throw err;
                                 } else {
-                                    var backupObj = _extends({}, localBackup);
-                                    backupObj.database = _extends({}, database);
-                                    backupObj.destination = _extends({}, destination);
-                                    _queue.BackupQueue.push(backupObj);
-                                    res.json({
-                                        error: false,
-                                        message: "Backup was added to the queue"
+                                    _backup2.default.findOne({ _id: localBackup._id }).populate('database').populate('destination').exec(function (err, backup) {
+                                        _queue.BackupQueue.push(backup);
+                                        res.json({
+                                            error: false,
+                                            message: "Backup was added to the queue"
+                                        });
                                     });
                                 }
                             });

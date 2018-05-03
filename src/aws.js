@@ -46,5 +46,5 @@ export function AWSUploadToS3(bucket, path, fileName, cb) {
                 }
             });
         }
-  });
+    });
 }

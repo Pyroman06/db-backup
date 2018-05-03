@@ -335,6 +335,7 @@ router.post('/database/manualbackup', isAuthenticated, function (req, res, next)
                                 startDate: Date.now(),
                                 type: "manual",
                                 status: "queued",
+                                hashes: {},
                                 log: ""
                             });
 
@@ -342,14 +343,13 @@ router.post('/database/manualbackup', isAuthenticated, function (req, res, next)
                                 if (err) {
                                     throw err;
                                 } else {
-                                    var backupObj = { ...localBackup }
-                                    backupObj.database = { ...database }
-                                    backupObj.destination = { ...destination }
-                                    BackupQueue.push(backupObj);
-                                    res.json({
-                                        error: false,
-                                        message: "Backup was added to the queue"
-                                    });
+                                    Backup.findOne({_id: localBackup._id}).populate('database').populate('destination').exec(function(err, backup) {
+                                        BackupQueue.push(backup);
+                                        res.json({
+                                            error: false,
+                                            message: "Backup was added to the queue"
+                                        });
+                                    })
                                 }
                             })
                         } else {

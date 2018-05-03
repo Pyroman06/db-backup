@@ -3,10 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.BackupQueue = undefined;
-exports.AddSchedule = AddSchedule;
-exports.RemoveSchedule = RemoveSchedule;
-exports.InitData = InitData;
+exports.InitData = exports.RemoveSchedule = exports.AddSchedule = exports.BackupQueue = undefined;
 
 var _betterQueue = require('better-queue');
 
@@ -28,7 +25,9 @@ var _fs = require('fs');
 
 var _fs2 = _interopRequireDefault(_fs);
 
-var _aws = require('./aws');
+var _crypto = require('crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
 
 var _server = require('./providers/server');
 
@@ -38,11 +37,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var Tasks = {};
 
-var BackupQueue = exports.BackupQueue = new _betterQueue2.default(function (input, cb) {
+function CalculateHashes(buf) {
+    var md5 = _crypto2.default.createHash('md5').update(buf).digest('hex');
+    var sha1 = _crypto2.default.createHash('sha1').update(buf).digest('hex');
+    var sha256 = _crypto2.default.createHash('sha256').update(buf).digest('hex');
+    var sha512 = _crypto2.default.createHash('sha512').update(buf).digest('hex');
+
+    return { md5: md5, sha1: sha1, sha256: sha256, sha512: sha512 };
+}
+
+var BackupQueue = new _betterQueue2.default(function (input, cb) {
     var databaseMethods = _server2.default.engines[input.database.engine].methods;
     var filename = databaseMethods.generateFilename(input);
     _backup2.default.findOne({ _id: input._id }, function (err, backup) {
-        databaseMethods.performBackup(filename, input, function (err, backupLog, path) {
+        databaseMethods.performBackup(input, function (err, backupLog, buf) {
             if (err) {
                 backup.log = backupLog;
                 backup.status = "failed";
@@ -54,14 +62,16 @@ var BackupQueue = exports.BackupQueue = new _betterQueue2.default(function (inpu
                     cb(null, backup.status);
                 });
             } else {
+                var hashList = CalculateHashes(buf);
                 var storageMethods = _server2.default.storages[input.destination.provider].methods;
-                storageMethods.storeBackup(filename, path, input, function (err, storageLog) {
+                storageMethods.storeBackup(filename, buf, input, function (err, storageLog) {
                     backup.log = backupLog + storageLog;
                     if (err) {
                         backup.status = "failed";
                     } else {
                         backup.status = "finished";
                         backup.filename = filename;
+                        backup.hashes = hashList;
                     }
                     backup.save(function (err) {
                         if (err) {
@@ -81,9 +91,11 @@ function AddSchedule(schedule) {
         var newBackup = new _backup2.default({
             database: schedule.database._id,
             destination: schedule.destination,
+            filename: "",
             startDate: Date.now(),
             type: "scheduled",
             status: "queued",
+            hashes: {},
             log: ""
         });
 
@@ -91,7 +103,7 @@ function AddSchedule(schedule) {
             if (err) {
                 throw err;
             } else {
-                _backup2.default.findOne({ _id: newBackup._id }).populate('database').exec(function (err, backup) {
+                _backup2.default.findOne({ _id: newBackup._id }).populate('database').populate('destination').exec(function (err, backup) {
                     BackupQueue.push(backup);
                 });
             }
@@ -122,3 +134,8 @@ function InitData() {
         });
     });
 }
+
+exports.BackupQueue = BackupQueue;
+exports.AddSchedule = AddSchedule;
+exports.RemoveSchedule = RemoveSchedule;
+exports.InitData = InitData;

@@ -12,6 +12,14 @@ var _fs = require('fs');
 
 var _fs2 = _interopRequireDefault(_fs);
 
+var _s = require('aws-sdk/clients/s3');
+
+var _s2 = _interopRequireDefault(_s);
+
+var _storage = require('@google-cloud/storage');
+
+var _storage2 = _interopRequireDefault(_storage);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var _require = require('child_process'),
@@ -24,8 +32,7 @@ _schema2.default.engines.mysql.methods = {
     generateFilename: function generateFilename(input) {
         return input.database._id + '_' + input.database.engine + '_' + new Date(input.startDate).valueOf() + '.gz';
     },
-    performBackup: function performBackup(filename, input, cb) {
-        var tmpDir = _os2.default.tmpdir();
+    performBackup: function performBackup(input, cb) {
         var stdout = [];
         var stderr = [];
         stderr.push(Buffer.from('Starting backup...\n'));
@@ -56,13 +63,7 @@ _schema2.default.engines.mysql.methods = {
                     var gzip_stdout = Buffer.concat(stdout);
                     var gzip_stderr = Buffer.concat(stderr);
                     if (code == 0) {
-                        _fs2.default.writeFile(tmpDir + "/" + filename, gzip_stdout, function (err) {
-                            if (err) {
-                                cb(true, Buffer.concat([mysqldump_stderr, gzip_stderr]).toString() + err, null);
-                            } else {
-                                cb(false, Buffer.concat([mysqldump_stderr, gzip_stderr]).toString(), tmpDir + '/' + filename);
-                            }
-                        });
+                        cb(false, Buffer.concat([mysqldump_stderr, gzip_stderr]).toString(), gzip_stdout);
                     } else {
                         cb(true, Buffer.concat([mysqldump_stderr, gzip_stderr]).toString(), null);
                     }
@@ -82,12 +83,12 @@ _schema2.default.engines.mongodb.methods = {
     generateFilename: function generateFilename(input) {
         return input.database._id + '_' + input.database.engine + '_' + new Date(input.startDate).valueOf() + '.gz';
     },
-    performBackup: function performBackup(filename, input, cb) {
+    performBackup: function performBackup(input, cb) {
         var tmpDir = _os2.default.tmpdir();
         var stdout = [];
         var stderr = [];
         stderr.push(Buffer.from('Starting backup...\n'));
-        var mongodump = spawn('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive=' + tmpDir + '/' + filename]);
+        var mongodump = spawn('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive']);
         mongodump.stdout.on('data', function (data) {
             stdout.push(data);
         });
@@ -100,7 +101,7 @@ _schema2.default.engines.mongodb.methods = {
             var mongodump_stderr = Buffer.concat(stderr);
 
             if (code == 0) {
-                cb(false, mongodump_stderr.toString(), tmpDir + '/' + filename);
+                cb(false, mongodump_stderr.toString(), mongodump_stdout);
             } else {
                 cb(true, mongodump_stderr.toString(), null);
             }
@@ -116,20 +117,51 @@ _schema2.default.engines.postgresql.methods = {
     performBackup: function performBackup(filename, input, cb) {}
 };
 
+//Local
 _schema2.default.storages.local.methods = {
-    storeBackup: function storeBackup(filename, path, input, cb) {
-        _fs2.default.rename(path, input.destination.options.path + '/' + filename, function (err) {
+    storeBackup: function storeBackup(filename, buf, input, cb) {
+        _fs2.default.writeFile(input.destination.options.path + '/' + filename, buf, function (err) {
             if (err) {
                 cb(true, err);
             } else {
-                cb(false, 'File was successfully moved to ' + input.destination.options.path + '/' + filename + '.\n');
+                cb(false, 'File was successfully written to ' + input.destination.options.path + '/' + filename + '.\n');
             }
         });
     }
 };
 
-_schema2.default.storages.s3.methods = {};
+//Amazon S3
+_schema2.default.storages.s3.methods = {
+    storeBackup: function storeBackup(filename, buf, input, cb) {
+        var s3Instance = new _s2.default();
+        s3Instance.config.update({ accessKeyId: input.destination.options.accessKey, secretAccessKey: input.destination.options.secretKey, region: input.destination.options.region });
+        s3Instance.putObject({
+            Bucket: input.destination.options.bucket,
+            Key: input.destination.options.path + '/' + filename,
+            Body: buf
+        }, function (err, data) {
+            if (err) {
+                cb(true, err);
+            } else {
+                cb(false, 'Uploaded ' + filename + ' to Amazon S3');
+            }
+        });
+    }
+};
 
-_schema2.default.storages.gcs.methods = {};
+//Google Cloud Storage
+_schema2.default.storages.gcs.methods = {
+    storeBackup: function storeBackup(filename, buf, input, cb) {
+        var gcsInstance = new _storage2.default({ projectId: input.destination.options.project, credentials: input.destination.options.serviceAccount });
+        var ws = gcsInstance.bucket(input.destination.options.bucket).file(input.destination.options.path + '/' + filename).createWriteStream();
+        ws.on('error', function (err) {
+            cb(true, err);
+        });
+        ws.on('finish', function () {
+            cb(false, 'Uploaded ' + filename + ' to Google Cloud Storage');
+        });
+        ws.end(buf);
+    }
+};
 
 module.exports = _schema2.default;

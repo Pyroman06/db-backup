@@ -42,14 +42,17 @@ module.exports = {
                 region: { type: _types.ENUM.TYPE_STRING, default: "", name: "Region", description: "Region of your Amazon S3 bucket" },
                 accessKey: { type: _types.ENUM.TYPE_STRING, default: "", name: "Access Key ID", description: "Access Key ID of your Amazon IAM user" },
                 secretKey: { type: _types.ENUM.TYPE_STRING, default: "", name: "Secret Key ID", description: "Secret Key ID of your Amazon IAM user", masked: true },
-                bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your Amazon S3 bucket" }
+                bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your Amazon S3 bucket" },
+                path: { type: _types.ENUM.TYPE_STRING, default: "backups", name: "Path", description: "Path within the bucket" }
             }
         },
         gcs: {
             name: "Google Cloud Storage",
             fields: {
+                project: { type: _types.ENUM.TYPE_STRING, default: "", name: "Project ID", description: "ID of the project where your bucket is located" },
                 serviceAccount: { type: _types.ENUM.TYPE_FILE, default: "", name: "Service account", description: "JSON file with your GCS service account credentials" },
-                bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your GCS bucket" }
+                bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your GCS bucket" },
+                path: { type: _types.ENUM.TYPE_STRING, default: "backups", name: "Path", description: "Path within the bucket" }
             }
         }
     }

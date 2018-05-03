@@ -8,5 +8,6 @@ module.exports = mongoose.model('Backup', new Schema({
     startDate: Date,
     type: String,
     status: String,
+    hashes: Object,
     log: String
 }));

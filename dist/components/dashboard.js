@@ -67,7 +67,9 @@ var Dashboard = function (_React$Component) {
             addTaskRule: "",
             addTaskDisabled: false,
             isLogOpen: false,
-            logIndex: null
+            logIndex: null,
+            isDownloadOpen: false,
+            downloadIndex: null
         };
         return _this;
     }
@@ -444,15 +446,19 @@ var Dashboard = function (_React$Component) {
     }, {
         key: 'toggleManualBackup',
         value: function toggleManualBackup() {
-            this.setState({
-                isManualBackupOpen: !this.state.isManualBackupOpen
+            this.setState(function (prevState) {
+                return {
+                    isManualBackupOpen: !prevState.isManualBackupOpen
+                };
             });
         }
     }, {
         key: 'handleAddTaskOpen',
         value: function handleAddTaskOpen() {
-            this.setState({
-                isAddTaskOpen: !this.state.isAddTaskOpen
+            this.setState(function (prevState) {
+                return {
+                    isAddTaskOpen: !prevState.isAddTaskOpen
+                };
             });
         }
     }, {
@@ -479,8 +485,10 @@ var Dashboard = function (_React$Component) {
     }, {
         key: 'toggleLogOpen',
         value: function toggleLogOpen() {
-            this.setState({
-                isLogOpen: !this.state.isLogOpen
+            this.setState(function (prevState) {
+                return {
+                    isLogOpen: !prevState.isLogOpen
+                };
             });
         }
     }, {
@@ -549,6 +557,23 @@ var Dashboard = function (_React$Component) {
                     addDatabaseDisabled: false
                 });
                 _toaster.AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: _core.Intent.DANGER });
+            });
+        }
+    }, {
+        key: 'openDownload',
+        value: function openDownload(index) {
+            this.setState({
+                isDownloadOpen: true,
+                downloadIndex: index
+            });
+        }
+    }, {
+        key: 'toggleDownloadOpen',
+        value: function toggleDownloadOpen() {
+            this.setState(function (prevState) {
+                return {
+                    isDownloadOpen: !prevState.isDownloadOpen
+                };
             });
         }
     }, {
@@ -1055,6 +1080,11 @@ var Dashboard = function (_React$Component) {
                                         'th',
                                         null,
                                         'Log'
+                                    ),
+                                    _react2.default.createElement(
+                                        'th',
+                                        null,
+                                        'Download'
                                     )
                                 )
                             ),
@@ -1103,6 +1133,11 @@ var Dashboard = function (_React$Component) {
                                             'td',
                                             null,
                                             _react2.default.createElement(_core.Button, { text: 'Log', intent: _core.Intent.PRIMARY, onClick: that.openLog.bind(that, index) })
+                                        ),
+                                        _react2.default.createElement(
+                                            'td',
+                                            null,
+                                            _react2.default.createElement(_core.Button, { text: 'Download', intent: _core.Intent.PRIMARY, onClick: that.openDownload.bind(that, index) })
                                         )
                                     );
                                 }),
@@ -1118,6 +1153,26 @@ var Dashboard = function (_React$Component) {
                                         { readOnly: true, style: { height: "400px", margin: "15px 15px 0px 15px", resize: "none" } },
                                         that.state.backups[that.state.logIndex].log
                                     )
+                                ) : null,
+                                that.state.downloadIndex != null ? _react2.default.createElement(
+                                    _core.Dialog,
+                                    {
+                                        isOpen: that.state.isDownloadOpen,
+                                        onClose: that.toggleDownloadOpen.bind(that),
+                                        title: 'Download'
+                                    },
+                                    that.state.backups[that.state.downloadIndex] ? _react2.default.createElement(
+                                        _core.Callout,
+                                        { title: 'Hashes', icon: 'lock', intent: _core.Intent.PRIMARY },
+                                        Object.keys(that.state.backups[that.state.downloadIndex].hashes).map(function (key) {
+                                            var hash = that.state.backups[that.state.downloadIndex].hashes[key];
+                                            return _react2.default.createElement(
+                                                _core.Label,
+                                                { text: key.toUpperCase() },
+                                                _react2.default.createElement('input', { className: 'pt-input pt-intent-primary pt-fill', type: 'text', dir: 'auto', value: hash, readOnly: true })
+                                            );
+                                        })
+                                    ) : null
                                 ) : null
                             ) : null
                         )

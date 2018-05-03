@@ -3,16 +3,25 @@ import Backup from './models/backup';
 import Scheduler from './models/scheduler';
 import Cron from 'node-cron';
 import fs from 'fs';
-import { AWSUploadToS3 } from './aws';
+import Crypto from 'crypto';
 import Providers from './providers/server';
 
 var Tasks = {}
 
-export var BackupQueue = new Queue(function (input, cb) {
+function CalculateHashes(buf) {
+    let md5 = Crypto.createHash('md5').update(buf).digest('hex');
+    let sha1 = Crypto.createHash('sha1').update(buf).digest('hex');
+    let sha256 = Crypto.createHash('sha256').update(buf).digest('hex');
+    let sha512 = Crypto.createHash('sha512').update(buf).digest('hex');
+
+    return {md5, sha1, sha256, sha512};
+}
+
+var BackupQueue = new Queue(function (input, cb) {
     let databaseMethods = Providers.engines[input.database.engine].methods;
     var filename = databaseMethods.generateFilename(input);
     Backup.findOne({_id: input._id}, function(err, backup) {
-        databaseMethods.performBackup(filename, input, function(err, backupLog, path) {
+        databaseMethods.performBackup(input, function(err, backupLog, buf) {
             if (err) {
                 backup.log = backupLog;
                 backup.status = "failed";
@@ -24,14 +33,16 @@ export var BackupQueue = new Queue(function (input, cb) {
                     cb(null, backup.status);
                 })
             } else {
+                let hashList = CalculateHashes(buf);
                 let storageMethods = Providers.storages[input.destination.provider].methods;
-                storageMethods.storeBackup(filename, path, input, function(err, storageLog) {
+                storageMethods.storeBackup(filename, buf, input, function(err, storageLog) {
                     backup.log = backupLog + storageLog;
                     if (err) {
                         backup.status = "failed";
                     } else {
                         backup.status = "finished";
                         backup.filename = filename;
+                        backup.hashes = hashList;
                     }
                     backup.save(function(err) {
                         if (err) {
@@ -46,14 +57,16 @@ export var BackupQueue = new Queue(function (input, cb) {
     });
 })
 
-export function AddSchedule(schedule) {
+function AddSchedule(schedule) {
     Tasks[schedule._id] = Cron.schedule(schedule.rule, function() {
         var newBackup = new Backup({
             database: schedule.database._id,
             destination: schedule.destination,
+            filename: "",
             startDate: Date.now(),
             type: "scheduled",
             status: "queued",
+            hashes: {},
             log: ""
         })
 
@@ -61,7 +74,7 @@ export function AddSchedule(schedule) {
             if (err) {
                 throw err;
             } else {
-                Backup.findOne({_id: newBackup._id}).populate('database').exec(function(err, backup) {
+                Backup.findOne({_id: newBackup._id}).populate('database').populate('destination').exec(function(err, backup) {
                     BackupQueue.push(backup);
                 })
             }
@@ -69,11 +82,11 @@ export function AddSchedule(schedule) {
     });
 }
 
-export function RemoveSchedule(id) {
+function RemoveSchedule(id) {
     Tasks[id].destroy()
 }
 
-export function InitData() {
+function InitData() {
     Backup.find({}).populate('database').populate('destination').exec(function(err, backups) {
         if (err) {
             throw err;
@@ -92,3 +105,5 @@ export function InitData() {
         });
     });
 }
+
+export { BackupQueue, AddSchedule, RemoveSchedule, InitData};

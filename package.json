@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@blueprintjs/core": "^2.0.0-rc.2",
+    "@google-cloud/storage": "^1.6.0",
     "aws-sdk": "^2.212.1",
     "bcrypt": "^1.0.3",
     "better-queue": "^3.8.6",

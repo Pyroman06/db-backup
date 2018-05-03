@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea, NumericInput, FileInput } from '@blueprintjs/core';
+import { Card, Button, Elevation, Tag, Intent, ProgressBar, Collapse, FormGroup, Radio, RadioGroup, Spinner, Menu, MenuItem, Popover, Dialog, TextArea, NumericInput, FileInput, Callout, Label } from '@blueprintjs/core';
 import { AppToaster } from './toaster';
 import MaskedText from './maskedtext';
 import Providers from '../providers/schema';
@@ -31,7 +31,9 @@ class Dashboard extends React.Component {
             addTaskRule: "",
             addTaskDisabled: false,
             isLogOpen: false,
-            logIndex: null
+            logIndex: null,
+            isDownloadOpen: false,
+            downloadIndex: null
         };
     }
 
@@ -390,15 +392,15 @@ class Dashboard extends React.Component {
     }
 
     toggleManualBackup() {
-        this.setState({
-            isManualBackupOpen: !this.state.isManualBackupOpen
-        });
+        this.setState(prevState => ({
+            isManualBackupOpen: !prevState.isManualBackupOpen
+        }));
     }
 
     handleAddTaskOpen() {
-        this.setState({
-            isAddTaskOpen: !this.state.isAddTaskOpen
-        });
+        this.setState(prevState => ({
+            isAddTaskOpen: !prevState.isAddTaskOpen
+        }));
     }
 
     addTaskDestinationChange(e) {
@@ -420,9 +422,9 @@ class Dashboard extends React.Component {
     }
 
     toggleLogOpen() {
-        this.setState({
-            isLogOpen: !this.state.isLogOpen
-        })
+        this.setState(prevState => ({
+            isLogOpen: !prevState.isLogOpen
+        }));
     }
 
     openLog(index) {
@@ -489,6 +491,19 @@ class Dashboard extends React.Component {
             });
             AppToaster.show({ message: "Something went wrong. Please, try again later.", intent: Intent.DANGER });
         });
+    }
+
+    openDownload(index) {
+        this.setState({
+            isDownloadOpen: true,
+            downloadIndex: index
+        })
+    }
+
+    toggleDownloadOpen() {
+        this.setState(prevState => ({
+            isDownloadOpen: !prevState.isDownloadOpen
+        }));
     }
 
     componentWillMount() {
@@ -765,6 +780,7 @@ class Dashboard extends React.Component {
                                     <th>Type</th>
                                     <th>Status</th>
                                     <th>Log</th>
+                                    <th>Download</th>
                                 </tr>
                             </thead>
                             {
@@ -782,6 +798,9 @@ class Dashboard extends React.Component {
                                                         <td>
                                                             <Button text="Log" intent={ Intent.PRIMARY } onClick={that.openLog.bind(that, index)} />
                                                         </td>
+                                                        <td>
+                                                            <Button text="Download" intent={ Intent.PRIMARY } onClick={that.openDownload.bind(that, index)} />
+                                                        </td>
                                                     </tr>
                                         })
                                     }
@@ -795,6 +814,30 @@ class Dashboard extends React.Component {
                                             <TextArea readOnly style={{height: "400px", margin: "15px 15px 0px 15px", resize: "none"}}>
                                                 {that.state.backups[that.state.logIndex].log}
                                             </TextArea>
+                                        </Dialog>
+                                        : null
+                                    }
+                                    {
+                                        (that.state.downloadIndex != null) ?
+                                        <Dialog
+                                            isOpen={that.state.isDownloadOpen}
+                                            onClose={that.toggleDownloadOpen.bind(that)}
+                                            title="Download"
+                                        >
+                                            {
+                                                that.state.backups[that.state.downloadIndex] ?
+                                                <Callout title="Hashes" icon="lock" intent={Intent.PRIMARY}>
+                                                    {
+                                                        Object.keys(that.state.backups[that.state.downloadIndex].hashes).map(function(key) {
+                                                            var hash = that.state.backups[that.state.downloadIndex].hashes[key];
+                                                            return  <Label text={key.toUpperCase()}>
+                                                                        <input className="pt-input pt-intent-primary pt-fill" type="text" dir="auto" value={hash} readOnly />
+                                                                    </Label>;
+                                                        })
+                                                    }
+                                                </Callout>
+                                                : null
+                                            }
                                         </Dialog>
                                         : null
                                     }
