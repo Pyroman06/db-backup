@@ -137,3 +137,7 @@ tbody > tr > td {
     outline: none;
     box-shadow: none;
 }
+
+.pt-callout-icon {
+    height: auto !important;
+}
