@@ -13,7 +13,6 @@ Schema.engines.mysql.methods = {
         return `${input.database._id}_${input.database.engine}_${new Date(input.startDate).valueOf()}.gz`
     },
     performBackup(input, hashStreams, storageStream, cb) {
-        let stdout = [];
         let stderr = [];
         stderr.push(Buffer.from('Starting backup...\n'))
         const gzip = spawn('gzip', ['-c']);
@@ -36,7 +35,7 @@ Schema.engines.mysql.methods = {
                 cb(true, Buffer.concat(stderr).toString());
             }
         })
-        const mysqldump = spawn('mysqldump', ['--all-databases', `--user=${input.database.options.username}`, `--password=${input.database.options.password}`, `--port=${input.database.options.port}`, `--host=${input.database.options.hostname}`, '--verbose']);
+        const mysqldump = spawn('mysqldump',['--all-databases', `--user=${input.database.options.username}`, `--password=${input.database.options.password}`, `--port=${input.database.options.port}`, `--host=${input.database.options.hostname}`, '--verbose']);
         mysqldump.stdout.pipe(gzip.stdin);
         mysqldump.stderr.on('data', data => {
             stderr.push(data);
@@ -59,7 +58,6 @@ Schema.engines.mongodb.methods = {
         return `${input.database._id}_${input.database.engine}_${new Date(input.startDate).valueOf()}.gz`
     },
     performBackup: function (input, hashStreams, storageStream, cb) {
-        const tmpDir = os.tmpdir();
         let stderr = [];
         stderr.push(Buffer.from('Starting backup...\n'))
         const mongodump = spawn('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive']);
@@ -93,8 +91,45 @@ Schema.engines.postgresql.methods = {
     generateFilename: function (input) {
         return `${input.database._id}_${input.database.engine}_${new Date(input.startDate).valueOf()}.gz`
     },
-    performBackup: function (filename, input, cb) {
-
+    performBackup(input, hashStreams, storageStream, cb) {
+        let stderr = [];
+        stderr.push(Buffer.from('Starting backup...\n'))
+        const gzip = spawn('gzip', ['-c']);
+        hashStreams.map(function(stream) {
+            gzip.stdout.pipe(stream);
+        })
+        gzip.stdout.pipe(storageStream);
+        gzip.stderr.on('data', data => {
+            stderr.push(data);
+        });
+        gzip.on('exit', code => {
+            stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
+            if (code == 0) {
+                cb(false, Buffer.concat(stderr).toString());
+                hashStreams.map(function(stream) {
+                    stream.end();
+                })
+                storageStream.end();
+            } else {
+                cb(true, Buffer.concat(stderr).toString());
+            }
+        })
+        let env = Object.create(process.env);
+        env.PGPASSWORD = input.database.options.password;
+        const pg_dump = spawn('pg_dumpall', [`--username=${input.database.options.username}`, `--port=${input.database.options.port}`, `--host=${input.database.options.hostname}`, '--no-password', '--no-role-password', '--verbose'], { env });
+        pg_dump.stdout.pipe(gzip.stdin);
+        pg_dump.stderr.on('data', data => {
+            stderr.push(data);
+        });
+        pg_dump.on('exit', code => {
+            stderr.push(Buffer.from(`Backup was completed with code ${code}.\n`))
+            if (code == 0) {
+                gzip.stdin.end();
+                stderr.push(Buffer.from(`Starting compression...\n`))
+            } else {
+                cb(true, Buffer.concat(stderr).toString());
+            }
+        })
     }
 };
 

@@ -32,7 +32,6 @@ _schema2.default.engines.mysql.methods = {
         return input.database._id + '_' + input.database.engine + '_' + new Date(input.startDate).valueOf() + '.gz';
     },
     performBackup: function performBackup(input, hashStreams, storageStream, cb) {
-        var stdout = [];
         var stderr = [];
         stderr.push(Buffer.from('Starting backup...\n'));
         var gzip = (0, _child_process.spawn)('gzip', ['-c']);
@@ -78,7 +77,6 @@ _schema2.default.engines.mongodb.methods = {
         return input.database._id + '_' + input.database.engine + '_' + new Date(input.startDate).valueOf() + '.gz';
     },
     performBackup: function performBackup(input, hashStreams, storageStream, cb) {
-        var tmpDir = _os2.default.tmpdir();
         var stderr = [];
         stderr.push(Buffer.from('Starting backup...\n'));
         var mongodump = (0, _child_process.spawn)('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive']);
@@ -111,7 +109,46 @@ _schema2.default.engines.postgresql.methods = {
     generateFilename: function generateFilename(input) {
         return input.database._id + '_' + input.database.engine + '_' + new Date(input.startDate).valueOf() + '.gz';
     },
-    performBackup: function performBackup(filename, input, cb) {}
+    performBackup: function performBackup(input, hashStreams, storageStream, cb) {
+        var stderr = [];
+        stderr.push(Buffer.from('Starting backup...\n'));
+        var gzip = (0, _child_process.spawn)('gzip', ['-c']);
+        hashStreams.map(function (stream) {
+            gzip.stdout.pipe(stream);
+        });
+        gzip.stdout.pipe(storageStream);
+        gzip.stderr.on('data', function (data) {
+            stderr.push(data);
+        });
+        gzip.on('exit', function (code) {
+            stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
+            if (code == 0) {
+                cb(false, Buffer.concat(stderr).toString());
+                hashStreams.map(function (stream) {
+                    stream.end();
+                });
+                storageStream.end();
+            } else {
+                cb(true, Buffer.concat(stderr).toString());
+            }
+        });
+        var env = Object.create(process.env);
+        env.PGPASSWORD = input.database.options.password;
+        var pg_dump = (0, _child_process.spawn)('pg_dumpall', ['--username=' + input.database.options.username, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--no-password', '--no-role-password', '--verbose'], { env: env });
+        pg_dump.stdout.pipe(gzip.stdin);
+        pg_dump.stderr.on('data', function (data) {
+            stderr.push(data);
+        });
+        pg_dump.on('exit', function (code) {
+            stderr.push(Buffer.from('Backup was completed with code ' + code + '.\n'));
+            if (code == 0) {
+                gzip.stdin.end();
+                stderr.push(Buffer.from('Starting compression...\n'));
+            } else {
+                cb(true, Buffer.concat(stderr).toString());
+            }
+        });
+    }
 };
 
 //Local

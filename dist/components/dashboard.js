@@ -515,7 +515,7 @@ var Dashboard = function (_React$Component) {
             var that = this;
             Object.keys(_schema2.default.storages[this.state.provider].fields).map(function (key) {
                 var field = _schema2.default.storages[that.state.provider].fields[key];
-                if (field.type == _types.ENUM.TYPE_FILE) {
+                if (field.type == _types.ENUM.TYPE_JSONFILE) {
                     formData.append(key, that.state['destination_' + key].file);
                 } else {
                     formData.append(key, that.state['destination_' + key]);
@@ -641,7 +641,7 @@ var Dashboard = function (_React$Component) {
                                     return _react2.default.createElement(
                                         _core.FormGroup,
                                         { helperText: field.description, label: field.name, labelFor: 'database-' + key, requiredLabel: true },
-                                        (field.type == _types.ENUM.TYPE_STRING || field.type == _types.ENUM.TYPE_NUMBER) && _react2.default.createElement('input', { id: 'database-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state['database_' + key], onChange: that.optionChange.bind(that, 'database_' + key) }) || field.type == _types.ENUM.TYPE_FILE && _react2.default.createElement(_core.FileInput, { onInputChange: that.fileChange.bind(that, 'database_' + key), text: that.state['database_' + key].path })
+                                        (field.type == _types.ENUM.TYPE_STRING || field.type == _types.ENUM.TYPE_NUMBER) && _react2.default.createElement('input', { id: 'database-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state['database_' + key], onChange: that.optionChange.bind(that, 'database_' + key) }) || field.type == _types.ENUM.TYPE_JSONFILE && _react2.default.createElement(_core.FileInput, { onInputChange: that.fileChange.bind(that, 'database_' + key), text: that.state['database_' + key].path })
                                     );
                                 }),
                                 _react2.default.createElement(_core.Button, { text: 'Add', intent: _core.Intent.PRIMARY, className: 'pt-large', loading: this.state.addDatabaseDisabled, onClick: this.addDatabase.bind(this) })
@@ -801,7 +801,7 @@ var Dashboard = function (_React$Component) {
                                     return _react2.default.createElement(
                                         _core.FormGroup,
                                         { helperText: field.description, label: field.name, labelFor: 'destination-' + key, requiredLabel: true },
-                                        (field.type == _types.ENUM.TYPE_STRING || field.type == _types.ENUM.TYPE_NUMBER) && _react2.default.createElement('input', { id: 'destination-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state['destination_' + key], onChange: that.optionChange.bind(that, 'destination_' + key) }) || field.type == _types.ENUM.TYPE_FILE && _react2.default.createElement(_core.FileInput, { onInputChange: that.fileChange.bind(that, 'destination_' + key), text: that.state['destination_' + key].path })
+                                        (field.type == _types.ENUM.TYPE_STRING || field.type == _types.ENUM.TYPE_NUMBER) && _react2.default.createElement('input', { id: 'destination-' + key, className: 'pt-input pt-intent-primary', type: 'text', placeholder: field.name, dir: 'auto', value: that.state['destination_' + key], onChange: that.optionChange.bind(that, 'destination_' + key) }) || field.type == _types.ENUM.TYPE_JSONFILE && _react2.default.createElement(_core.FileInput, { onInputChange: that.fileChange.bind(that, 'destination_' + key), text: that.state['destination_' + key].path })
                                     );
                                 }),
                                 _react2.default.createElement(_core.Button, { text: 'Add', intent: _core.Intent.PRIMARY, className: 'pt-large', loading: this.state.addDestinationDisabled, onClick: this.addDestination.bind(this) })
@@ -861,7 +861,7 @@ var Dashboard = function (_React$Component) {
                                             Object.keys(_schema2.default.storages[destination.provider].fields).map(function (key) {
                                                 if (destination.options[key]) {
                                                     var field = _schema2.default.storages[destination.provider].fields[key];
-                                                    if (field.type == _types.ENUM.TYPE_FILE) {
+                                                    if (field.type == _types.ENUM.TYPE_JSONFILE) {
                                                         return _react2.default.createElement(
                                                             'div',
                                                             null,
@@ -1084,7 +1084,7 @@ var Dashboard = function (_React$Component) {
                                     _react2.default.createElement(
                                         'th',
                                         null,
-                                        'Download'
+                                        'Details'
                                     )
                                 )
                             ),
@@ -1125,8 +1125,8 @@ var Dashboard = function (_React$Component) {
                                             null,
                                             _react2.default.createElement(
                                                 _core.Tag,
-                                                { className: 'pt-minimal', intent: (backup.status == "queued" || backup.status == "progress") && _core.Intent.WARNING || backup.status == "finished" && _core.Intent.SUCCESS || backup.status == "failed" && _core.Intent.DANGER },
-                                                backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"
+                                                { className: 'pt-minimal', intent: backup.status == "queued" && _core.Intent.WARNING || backup.status == "finished" && _core.Intent.SUCCESS || backup.status == "failed" && _core.Intent.DANGER },
+                                                backup.status == "queued" && "In queue" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"
                                             )
                                         ),
                                         _react2.default.createElement(
@@ -1137,7 +1137,7 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            backup.status == "finished" ? _react2.default.createElement(_core.Button, { text: 'Download', intent: _core.Intent.PRIMARY, onClick: that.openDownload.bind(that, index) }) : null
+                                            backup.status == "finished" ? _react2.default.createElement(_core.Button, { text: 'View details', intent: _core.Intent.PRIMARY, onClick: that.openDownload.bind(that, index) }) : null
                                         )
                                     );
                                 }),

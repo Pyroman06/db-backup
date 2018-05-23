@@ -35,9 +35,7 @@ var Settings = function (_React$Component) {
         var _this = _possibleConstructorReturn(this, (Settings.__proto__ || Object.getPrototypeOf(Settings)).call(this, props));
 
         _this.state = {
-            region: "",
-            accessKey: "",
-            secretKey: "",
+            threads: 1,
             error: false,
             loading: true
         };
@@ -45,24 +43,10 @@ var Settings = function (_React$Component) {
     }
 
     _createClass(Settings, [{
-        key: 'regionChange',
-        value: function regionChange(e) {
+        key: 'threadsChange',
+        value: function threadsChange(e) {
             this.setState({
-                region: e.target.value
-            });
-        }
-    }, {
-        key: 'accessKeyChange',
-        value: function accessKeyChange(e) {
-            this.setState({
-                accessKey: e.target.value
-            });
-        }
-    }, {
-        key: 'secretKeyChange',
-        value: function secretKeyChange(e) {
-            this.setState({
-                secretKey: e.target.value
+                threads: e.target.value
             });
         }
     }, {
@@ -77,9 +61,7 @@ var Settings = function (_React$Component) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    region: this.state.region,
-                    accessKey: this.state.accessKey,
-                    secretKey: this.state.secretKey
+                    threads: this.state.threads
                 })
             }).then(function (response) {
                 if (!response.ok) {
@@ -175,18 +157,8 @@ var Settings = function (_React$Component) {
                             null,
                             _react2.default.createElement(
                                 _core.FormGroup,
-                                { helperText: 'Region of your Amazon S3 bucket', label: 'Amazon S3 Region', labelFor: 'region-input' },
-                                _react2.default.createElement('input', { id: 'region-input', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'text', placeholder: 'Amazon S3 Region', dir: 'auto', value: this.state.region, onChange: this.regionChange.bind(this) })
-                            ),
-                            _react2.default.createElement(
-                                _core.FormGroup,
-                                { helperText: 'Access Key ID of your Amazon IAM user', label: 'Amazon IAM Access Key ID', labelFor: 'access-key-input' },
-                                _react2.default.createElement('input', { id: 'access-key-input', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'text', placeholder: 'Amazon IAM Access Key ID', dir: 'auto', value: this.state.accessKey, onChange: this.accessKeyChange.bind(this) })
-                            ),
-                            _react2.default.createElement(
-                                _core.FormGroup,
-                                { helperText: 'Secret Key of your Amazon IAM user', label: 'Amazon IAM Secret Key', labelFor: 'secret-key-input' },
-                                _react2.default.createElement('input', { id: 'secret-key-input', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'password', placeholder: 'Amazon IAM Secret Key', dir: 'auto', value: this.state.secretKey, onChange: this.secretKeyChange.bind(this) })
+                                { helperText: 'Amount of backups that can run simultaneously', label: 'Threads', labelFor: 'region-input' },
+                                _react2.default.createElement('input', { id: 'region-input', className: 'pt-input pt-intent-primary pt-large pt-fill', type: 'text', placeholder: 'Threads', dir: 'auto', value: this.state.threads, onChange: this.threadsChange.bind(this) })
                             ),
                             _react2.default.createElement(_core.Button, { text: 'Save', intent: _core.Intent.PRIMARY, className: 'pt-large', onClick: this.saveSettings.bind(this) })
                         )

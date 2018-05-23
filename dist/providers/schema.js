@@ -50,7 +50,7 @@ module.exports = {
             name: "Google Cloud Storage",
             fields: {
                 project: { type: _types.ENUM.TYPE_STRING, default: "", name: "Project ID", description: "ID of the project where your bucket is located" },
-                serviceAccount: { type: _types.ENUM.TYPE_FILE, default: "", name: "Service account", description: "JSON file with your GCS service account credentials" },
+                serviceAccount: { type: _types.ENUM.TYPE_JSONFILE, default: "", name: "Service account", description: "JSON file with your GCS service account credentials" },
                 bucket: { type: _types.ENUM.TYPE_STRING, default: "", name: "Bucket", description: "Name of your GCS bucket" },
                 path: { type: _types.ENUM.TYPE_STRING, default: "backups", name: "Path", description: "Path within the bucket" }
             }

@@ -7,7 +7,7 @@
     "dev": "nodemon ./src/server.js 4000 --exec babel-node",
     "start": "forever start ./dist/server.js 4000",
     "build": "babel src -d dist --presets env,react,stage-2",
-    "build-client": "node_modules/.bin/webpack -p"
+    "build-client": "node_modules/.bin/webpack"
   },
   "repository": {
     "type": "git",
@@ -39,11 +39,10 @@
     "@blueprintjs/core": "^2.0.0-rc.2",
     "@google-cloud/storage": "^1.6.0",
     "aws-sdk": "^2.212.1",
-    "bcrypt": "^1.0.3",
+    "bcrypt": "^2.0.1",
     "better-queue": "^3.8.6",
     "body-parser": "^1.18.2",
     "connect-mongo": "^2.0.1",
-    "cookie-parser": "^1.4.3",
     "express": "^4.16.2",
     "express-session": "^1.15.6",
     "formidable": "^1.2.1",
@@ -52,13 +51,10 @@
     "passport": "^0.4.0",
     "passport-local": "^1.0.0",
     "react": "^16.2.0",
-    "react-addons-css-transition-group": "^15.6.2",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.7",
-    "react-router-bootstrap": "^0.24.4",
     "react-router-dom": "^4.2.2",
-    "react-transition-group": "^2.2.1",
-    "redux": "^3.7.2",
-    "redux-thunk": "^2.2.0"
+    "react-transition-group": "^2.3.1",
+    "redux": "^3.7.2"
   }
 }

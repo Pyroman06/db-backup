@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Button, Switch, Intent, FormGroup, Dialog } from '@blueprintjs/core';
-import { SetUser } from '../actions/user';
+import { UserState } from '../actions/user';
 import { AppToaster } from './toaster';
 
 class LoginForm extends React.Component {
@@ -218,7 +218,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        SetUser: (user) => dispatch(SetUser(user))
+        SetUser: (user) => dispatch(UserState(user))
     };
 };
 

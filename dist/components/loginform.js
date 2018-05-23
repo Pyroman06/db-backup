@@ -289,7 +289,7 @@ var mapStateToProps = function mapStateToProps(state) {
 var mapDispatchToProps = function mapDispatchToProps(dispatch) {
     return {
         SetUser: function SetUser(user) {
-            return dispatch((0, _user.SetUser)(user));
+            return dispatch((0, _user.UserState)(user));
         }
     };
 };

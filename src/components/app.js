@@ -6,7 +6,7 @@ import Home from '../components/home';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import Settings from '../components/settings';
-import { SetUser } from '../actions/user';
+import { UserState } from '../actions/user';
 
 class App extends React.Component {
     constructor (props) {
@@ -80,7 +80,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        SetUser: (user) => dispatch(SetUser(user))
+        SetUser: (user) => dispatch(UserState(user))
     };
 };
 

@@ -56,14 +56,11 @@ var _nodeCron2 = _interopRequireDefault(_nodeCron);
 
 var _queue = require('../queue');
 
-var _aws = require('../aws');
-
 var _types = require('../providers/types');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 (0, _queue.InitData)();
-(0, _aws.AWSLoadConfig)();
 
 var router = new _express.Router();
 
@@ -78,7 +75,6 @@ function isAuthenticated(req, res, next) {
         message: "Access denied"
     });
 }
-
 //Login
 router.post('/login', function (req, res, next) {
     _passport2.default.authenticate('local', function (err, user, info) {
@@ -118,7 +114,7 @@ router.post('/getuser', function (req, res, next) {
         return res.json({
             error: false,
             message: "Session found",
-            user: { username: req.user.username, email: req.user.email, group: req.user.group, isLoggedIn: true }
+            user: { username: req.user.username, group: req.user.group, isLoggedIn: true }
         });
     } else {
         _user2.default.count({}, function (err, count) {
@@ -176,7 +172,7 @@ router.post('/createroot', function (req, res, next) {
 router.post('/settings/get', isAuthenticated, function (req, res, next) {
     _settings2.default.find({}, function (err, settings) {
         if (settings.length == 0) {
-            _settings2.default.insertMany([new _settings2.default({ uniqueId: "region", value: "" }), new _settings2.default({ uniqueId: "accessKey", value: "" }), new _settings2.default({ uniqueId: "secretKey", value: "" })]);
+            _settings2.default.insertMany([new _settings2.default({ uniqueId: "threads", value: 1 })]);
             return res.json({ error: false, message: "Settings retrieved", settings: { region: "", accessKey: "", secretKey: "" } });
         } else {
             var settingsJson = {};
@@ -191,7 +187,7 @@ router.post('/settings/get', isAuthenticated, function (req, res, next) {
 });
 
 router.post('/settings/save', isAuthenticated, function (req, res, next) {
-    if (req.body.region && req.body.accessKey && req.body.secretKey) {
+    if (req.body.threads) {
         _settings2.default.find({}, function (err, settings) {
             settings.map(function (setting, index) {
                 setting.value = req.body[setting.uniqueId];
@@ -201,7 +197,6 @@ router.post('/settings/save', isAuthenticated, function (req, res, next) {
                     }
                 });
             });
-            (0, _aws.AWSUpdateConfig)(req.body.accessKey, req.body.secretKey, req.body.region);
             res.json({
                 error: false,
                 message: "Settings were saved"
@@ -433,7 +428,6 @@ router.post('/destination/add', isAuthenticated, function (req, res, next) {
         if (err) {
             return res.json({ error: true, message: "An unexpected error occurred" });
         }
-
         var provider = fields.provider;
         var name = fields.name;
         var storageData = _server2.default.storages[provider];
@@ -444,7 +438,7 @@ router.post('/destination/add', isAuthenticated, function (req, res, next) {
                 var error = null;
                 Object.keys(storageData.fields).map(function (key) {
                     var field = storageData.fields[key];
-                    if (field.type == _types.ENUM.TYPE_FILE) {
+                    if (field.type == _types.ENUM.TYPE_JSONFILE) {
                         if (files[key]) {
                             var contents = _fs2.default.readFileSync(files[key].path, 'utf8');
                             try {

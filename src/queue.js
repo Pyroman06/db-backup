@@ -122,7 +122,6 @@ function AddSchedule(schedule) {
             hashes: {},
             log: ""
         })
-
         newBackup.save(function (err) {
             if (err) {
                 throw err;

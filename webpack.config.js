@@ -3,6 +3,7 @@ const path = require('path');
 
 module.exports = {
   entry: path.join(__dirname, 'src', 'app-client.js'),
+  mode: "production",
   output: {
     path: path.join(__dirname, 'public', 'js'),
     filename: 'bundle.js',
@@ -22,10 +23,5 @@ module.exports = {
         loader: "style-loader!css-loader" 
       }
     ]
-  },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('dev')
-    })
-  ]
+  }
 };

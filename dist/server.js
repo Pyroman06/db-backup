@@ -20,10 +20,6 @@ var _bodyParser = require('body-parser');
 
 var _bodyParser2 = _interopRequireDefault(_bodyParser);
 
-var _cookieParser = require('cookie-parser');
-
-var _cookieParser2 = _interopRequireDefault(_cookieParser);
-
 var _passport = require('passport');
 
 var _passport2 = _interopRequireDefault(_passport);
@@ -53,7 +49,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var LocalStrategy = _passportLocal2.default.Strategy;
 var port = process.argv[2] || 4000;
 
-//Connect to the database
+//Connecting to the database
 _mongoose2.default.connect(_config2.default.mongoDBUri);
 
 //Initializing Express and creating a server
@@ -63,8 +59,7 @@ var server = require('http').createServer(app);
 //Trust proxy, so we can get the real IP behind CloudFlare
 app.enable('trust proxy');
 
-//Handling requests with body-parser and cookie-parser
-app.use((0, _cookieParser2.default)());
+//Handling requests with body-parser
 app.use(_bodyParser2.default.json());
 app.use(_bodyParser2.default.urlencoded({ extended: true }));
 

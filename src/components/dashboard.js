@@ -446,7 +446,7 @@ class Dashboard extends React.Component {
         var that = this;
         Object.keys(Providers.storages[this.state.provider].fields).map(function(key) {
             let field = Providers.storages[that.state.provider].fields[key];
-            if (field.type == ENUM.TYPE_FILE) {
+            if (field.type == ENUM.TYPE_JSONFILE) {
                 formData.append(key, that.state[`destination_${key}`].file)
             } else {
                 formData.append(key, that.state[`destination_${key}`])
@@ -556,7 +556,7 @@ class Dashboard extends React.Component {
                                                     {
                                                         (field.type == ENUM.TYPE_STRING || field.type == ENUM.TYPE_NUMBER) &&
                                                             <input id={`database-${key}`} className="pt-input pt-intent-primary" type="text" placeholder={ field.name } dir="auto" value={that.state[`database_${key}`]} onChange={that.optionChange.bind(that, `database_${key}`)} />
-                                                        || (field.type == ENUM.TYPE_FILE) &&
+                                                        || (field.type == ENUM.TYPE_JSONFILE) &&
                                                             <FileInput onInputChange={that.fileChange.bind(that, `database_${key}`)} text={that.state[`database_${key}`].path} />
                                                     }
                                                 </FormGroup>
@@ -651,7 +651,7 @@ class Dashboard extends React.Component {
                                                     {
                                                         (field.type == ENUM.TYPE_STRING || field.type == ENUM.TYPE_NUMBER) &&
                                                             <input id={`destination-${key}`} className="pt-input pt-intent-primary" type="text" placeholder={ field.name } dir="auto" value={that.state[`destination_${key}`]} onChange={that.optionChange.bind(that, `destination_${key}`)} />
-                                                        || (field.type == ENUM.TYPE_FILE) &&
+                                                        || (field.type == ENUM.TYPE_JSONFILE) &&
                                                             <FileInput onInputChange={that.fileChange.bind(that, `destination_${key}`)} text={that.state[`destination_${key}`].path} />
                                                     }
                                                 </FormGroup>
@@ -682,7 +682,7 @@ class Dashboard extends React.Component {
                                                                     Object.keys(Providers.storages[destination.provider].fields).map(function(key) {
                                                                         if (destination.options[key]) {
                                                                             let field = Providers.storages[destination.provider].fields[key];
-                                                                            if (field.type == ENUM.TYPE_FILE) {
+                                                                            if (field.type == ENUM.TYPE_JSONFILE) {
                                                                                 return <div>{`${field.name}: `}<span style={{fontStyle: "italic"}}>Uploaded</span></div>
                                                                             } else {
                                                                                 return <div>{`${field.name}: `}{field.masked ? <MaskedText text={ destination.options[key] } /> : destination.options[key] }</div>
@@ -780,7 +780,7 @@ class Dashboard extends React.Component {
                                     <th>Type</th>
                                     <th>Status</th>
                                     <th>Log</th>
-                                    <th>Download</th>
+                                    <th>Details</th>
                                 </tr>
                             </thead>
                             {
@@ -794,14 +794,14 @@ class Dashboard extends React.Component {
                                                         <td>{backup.filename || "-"}</td>
                                                         <td>{new Date(backup.startDate).toLocaleString()}</td>
                                                         <td>{backup.type == "manual" && "Manual" || backup.type == "scheduled" && "Scheduled"}</td>
-                                                        <td><Tag className="pt-minimal" intent={(backup.status == "queued" || backup.status == "progress") && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "progress" && "In progress" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag></td>
+                                                        <td><Tag className="pt-minimal" intent={backup.status == "queued" && Intent.WARNING || backup.status == "finished" && Intent.SUCCESS || backup.status == "failed" && Intent.DANGER}>{backup.status == "queued" && "In queue" || backup.status == "finished" && "Finished" || backup.status == "failed" && "Failed"}</Tag></td>
                                                         <td>
                                                             <Button text="Log" intent={ Intent.PRIMARY } onClick={that.openLog.bind(that, index)} />
                                                         </td>
                                                         <td>
                                                             {
                                                                 backup.status == "finished" ?
-                                                                <Button text="Download" intent={ Intent.PRIMARY } onClick={that.openDownload.bind(that, index)} />
+                                                                <Button text="View details" intent={ Intent.PRIMARY } onClick={that.openDownload.bind(that, index)} />
                                                                 : null
                                                             }
                                                         </td>

@@ -7,10 +7,6 @@ exports.default = ConfigureStore;
 
 var _redux = require('redux');
 
-var _reduxThunk = require('redux-thunk');
-
-var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
-
 var _reducers = require('../reducers');
 
 var _reducers2 = _interopRequireDefault(_reducers);
@@ -18,5 +14,5 @@ var _reducers2 = _interopRequireDefault(_reducers);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function ConfigureStore(InitialState) {
-    return (0, _redux.createStore)(_reducers2.default, InitialState, (0, _redux.applyMiddleware)(_reduxThunk2.default));
+    return (0, _redux.createStore)(_reducers2.default, InitialState);
 }

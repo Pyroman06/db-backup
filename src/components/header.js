@@ -1,8 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { LinkContainer } from 'react-router-bootstrap';
-import { SetUser } from '../actions/user';
+import { UserState } from '../actions/user';
 import { AppToaster } from './toaster';
 import { Intent, Toast, Navbar, NavbarHeading, NavbarGroup, Alignment, Tag, Button } from '@blueprintjs/core';
 let loggedInCategories = [{ name: "Dashboard", path: "/" }, { name: "Settings", path: "/settings" }];
@@ -65,7 +64,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => {
     return {
-        SetUser: (user) => dispatch(SetUser(user))
+        SetUser: (user) => dispatch(UserState(user))
     };
 };
 

@@ -14,8 +14,6 @@ var _reactRedux = require('react-redux');
 
 var _reactRouterDom = require('react-router-dom');
 
-var _reactRouterBootstrap = require('react-router-bootstrap');
-
 var _user = require('../actions/user');
 
 var _toaster = require('./toaster');
@@ -122,7 +120,7 @@ var mapStateToProps = function mapStateToProps(state) {
 var mapDispatchToProps = function mapDispatchToProps(dispatch) {
     return {
         SetUser: function SetUser(user) {
-            return dispatch((0, _user.SetUser)(user));
+            return dispatch((0, _user.UserState)(user));
         }
     };
 };

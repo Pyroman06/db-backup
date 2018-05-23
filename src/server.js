@@ -3,7 +3,6 @@ import Express from 'express';
 import ExpressSession from 'express-session';
 import Mongoose from 'mongoose';
 import BodyParser from 'body-parser';
-import CookieParser from 'cookie-parser';
 import Passport from 'passport';
 import PassportLocal from 'passport-local';
 import Bcrypt from 'bcrypt';
@@ -14,7 +13,7 @@ import User from './models/user';
 const LocalStrategy = PassportLocal.Strategy;
 const port = process.argv[2] || 4000;
 
-//Connect to the database
+//Connecting to the database
 Mongoose.connect(Config.mongoDBUri);
 
 //Initializing Express and creating a server
@@ -24,8 +23,7 @@ var server = require('http').createServer(app);
 //Trust proxy, so we can get the real IP behind CloudFlare
 app.enable('trust proxy');
 
-//Handling requests with body-parser and cookie-parser
-app.use(CookieParser());
+//Handling requests with body-parser
 app.use(BodyParser.json());
 app.use(BodyParser.urlencoded({ extended: true }));
 

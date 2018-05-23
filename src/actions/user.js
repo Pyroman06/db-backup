@@ -4,9 +4,3 @@ export function UserState(user) {
         user: user
     };
 }
-
-export function SetUser(user) {
-    return (dispatch) => {
-        dispatch(UserState(user));
-    };
-}

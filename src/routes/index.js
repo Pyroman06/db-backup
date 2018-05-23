@@ -12,11 +12,9 @@ import Destination from '../models/destination';
 import Providers from '../providers/server';
 import Cron from 'node-cron';
 import { BackupQueue, AddSchedule, RemoveSchedule, InitData } from '../queue';
-import { AWSLoadConfig, AWSUpdateConfig } from '../aws';
 import { ENUM } from '../providers/types';
 
 InitData();
-AWSLoadConfig();
 
 const router = new Router();
 
@@ -31,7 +29,6 @@ function isAuthenticated(req, res, next) {
         message: "Access denied"
     });
 }
-
 //Login
 router.post('/login', function (req, res, next) {
     Passport.authenticate('local', function (err, user, info) {
@@ -65,7 +62,7 @@ router.post('/getuser', function (req, res, next) {
         return res.json({
             error: false,
             message: "Session found",
-            user: { username: req.user.username, email: req.user.email, group: req.user.group, isLoggedIn: true }
+            user: { username: req.user.username, group: req.user.group, isLoggedIn: true }
         });
     } else {
         User.count({}, function (err, count) {
@@ -123,7 +120,7 @@ router.post('/createroot', function (req, res, next) {
 router.post('/settings/get', isAuthenticated, function (req, res, next) {
     Settings.find({}, function (err, settings) {
         if (settings.length == 0) {
-            Settings.insertMany([new Settings({ uniqueId: "region", value: "" }), new Settings({ uniqueId: "accessKey", value: "" }), new Settings({ uniqueId: "secretKey", value: "" })]);
+            Settings.insertMany([new Settings({ uniqueId: "threads", value: 1 })]);
             return res.json({ error: false, message: "Settings retrieved", settings: { region: "", accessKey: "", secretKey: "" } });
         } else {
             var settingsJson = {}
@@ -138,7 +135,7 @@ router.post('/settings/get', isAuthenticated, function (req, res, next) {
 });
 
 router.post('/settings/save', isAuthenticated, function (req, res, next) {
-    if (req.body.region && req.body.accessKey && req.body.secretKey) {
+    if (req.body.threads) {
         Settings.find({}, function (err, settings) {
             settings.map(function (setting, index) {
                 setting.value = req.body[setting.uniqueId];
@@ -148,7 +145,6 @@ router.post('/settings/save', isAuthenticated, function (req, res, next) {
                     }
                 });
             });
-            AWSUpdateConfig(req.body.accessKey, req.body.secretKey, req.body.region);
             res.json({
                 error: false,
                 message: "Settings were saved"
@@ -381,7 +377,6 @@ router.post('/destination/add', isAuthenticated, function (req, res, next) {
         if (err) {
             return res.json({ error: true, message: "An unexpected error occurred" })
         }
-
         const provider = fields.provider;
         const name = fields.name;
         const storageData = Providers.storages[provider];
@@ -392,7 +387,7 @@ router.post('/destination/add', isAuthenticated, function (req, res, next) {
                 var error = null;
                 Object.keys(storageData.fields).map(function (key) {
                     var field = storageData.fields[key];
-                    if (field.type == ENUM.TYPE_FILE) {
+                    if (field.type == ENUM.TYPE_JSONFILE) {
                         if (files[key]) {
                             var contents = fs.readFileSync(files[key].path, 'utf8')
                             try {
