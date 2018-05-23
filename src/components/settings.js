@@ -77,9 +77,7 @@ class Settings extends React.Component {
         .then((data) => {
             if (!data.error) {
                 this.setState({
-                    region: data.settings.region,
-                    accessKey: data.settings.accessKey,
-                    secretKey: data.settings.secretKey,
+                    threads: data.settings.threads,
                     error: false,
                     loading: false
                 })
