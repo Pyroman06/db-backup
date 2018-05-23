@@ -110,9 +110,7 @@ var Settings = function (_React$Component) {
             }).then(function (data) {
                 if (!data.error) {
                     _this3.setState({
-                        region: data.settings.region,
-                        accessKey: data.settings.accessKey,
-                        secretKey: data.settings.secretKey,
+                        threads: data.settings.threads,
                         error: false,
                         loading: false
                     });
