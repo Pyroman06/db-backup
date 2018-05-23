@@ -1,22 +1,26 @@
-# db-backup
-Web-based MySQL/MongoDB database backup tool created with Node.js and React. Supports both local and cloud (Amazon S3) backups.
+# Database Backup Tool
+Web-based MySQL/MongoDB/PostgreSQL database backup tool created with Node.js and React. Supports both local and cloud (Amazon S3 / Google Cloud Storage) backups.
 ## Requirements
 The following requirements must be met in order to run this application:
 - forever
 ``` bash
 npm install -g forever
 ```
-- nodemon (only for development server)
+- nodemon (only for the development server)
 ``` bash
 npm install -g nodemon
 ```
-- mysql-client package
+- mysql-client
 ``` bash
 apt-get install mysql-client
 ```
 - mongodb-org-tools
 ``` bash
 apt-get install mongodb-org-tools
+```
+- postgresql-client-10
+``` bash
+apt-get install postgresql-client-10
 ```
 ## Installation
 Use the following commands for installation:
