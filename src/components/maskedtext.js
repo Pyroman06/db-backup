@@ -13,7 +13,7 @@ class MaskedText extends React.Component {
         return (
             <span>
                 <span style={{ fontStyle: this.state.isMasked ? "italic" : "normal" }}>{ this.state.isMasked ? "Content hidden" : this.props.text }</span>
-                <Button className="db-margin-left-small db-button-focus" small minimal text={ this.state.isMasked ? "Show" : "Hide" } intent={ Intent.PRIMARY } onClick={(e) => { this.setState(prevState => ({ isMasked: !prevState.isMasked })) }} />
+                <Button className="db-margin-left-small db-button-focus pt-minimal pt-small" text={ this.state.isMasked ? "Show" : "Hide" } intent={ Intent.PRIMARY } onClick={(e) => { this.setState(prevState => ({ isMasked: !prevState.isMasked })) }} />
             </span>
         )
     }

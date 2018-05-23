@@ -47,7 +47,7 @@ var MaskedText = function (_React$Component) {
                     { style: { fontStyle: this.state.isMasked ? "italic" : "normal" } },
                     this.state.isMasked ? "Content hidden" : this.props.text
                 ),
-                _react2.default.createElement(_core.Button, { className: 'db-margin-left-small db-button-focus', small: true, minimal: true, text: this.state.isMasked ? "Show" : "Hide", intent: _core.Intent.PRIMARY, onClick: function onClick(e) {
+                _react2.default.createElement(_core.Button, { className: 'db-margin-left-small db-button-focus pt-minimal pt-small', text: this.state.isMasked ? "Show" : "Hide", intent: _core.Intent.PRIMARY, onClick: function onClick(e) {
                         _this2.setState(function (prevState) {
                             return { isMasked: !prevState.isMasked };
                         });
