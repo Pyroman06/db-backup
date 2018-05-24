@@ -32,8 +32,8 @@ class Dashboard extends React.Component {
             addTaskDisabled: false,
             isLogOpen: false,
             logIndex: null,
-            isDownloadOpen: false,
-            downloadIndex: null
+            isInformationOpen: false,
+            informationIndex: null
         };
     }
 
@@ -493,16 +493,16 @@ class Dashboard extends React.Component {
         });
     }
 
-    openDownload(index) {
+    openInformation(index) {
         this.setState({
-            isDownloadOpen: true,
-            downloadIndex: index
+            isInformationOpen: true,
+            informationIndex: index
         })
     }
 
-    toggleDownloadOpen() {
+    toggleInformationOpen() {
         this.setState(prevState => ({
-            isDownloadOpen: !prevState.isDownloadOpen
+            isInformationOpen: !prevState.isInformationOpen
         }));
     }
 
@@ -801,7 +801,7 @@ class Dashboard extends React.Component {
                                                         <td>
                                                             {
                                                                 backup.status == "finished" ?
-                                                                <Button text="View details" intent={ Intent.PRIMARY } onClick={that.openDownload.bind(that, index)} />
+                                                                <Button text="View details" intent={ Intent.PRIMARY } onClick={that.openInformation.bind(that, index)} />
                                                                 : null
                                                             }
                                                         </td>
@@ -822,18 +822,18 @@ class Dashboard extends React.Component {
                                         : null
                                     }
                                     {
-                                        (that.state.downloadIndex != null) ?
+                                        (that.state.informationIndex != null) ?
                                         <Dialog
-                                            isOpen={that.state.isDownloadOpen}
-                                            onClose={that.toggleDownloadOpen.bind(that)}
-                                            title="Download"
+                                            isOpen={that.state.isInformationOpen}
+                                            onClose={that.toggleInformationOpen.bind(that)}
+                                            title="Additional information"
                                         >
                                             {
-                                                that.state.backups[that.state.downloadIndex] ?
+                                                that.state.backups[that.state.informationIndex] ?
                                                 <Callout title="Hashes" icon="lock" intent={Intent.PRIMARY}>
                                                     {
-                                                        Object.keys(that.state.backups[that.state.downloadIndex].hashes).map(function(key) {
-                                                            var hash = that.state.backups[that.state.downloadIndex].hashes[key];
+                                                        Object.keys(that.state.backups[that.state.informationIndex].hashes).map(function(key) {
+                                                            var hash = that.state.backups[that.state.informationIndex].hashes[key];
                                                             return  <Label text={key.toUpperCase()}>
                                                                         <input className="pt-input pt-intent-primary pt-fill" type="text" dir="auto" value={hash} readOnly />
                                                                     </Label>;

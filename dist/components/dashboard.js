@@ -68,8 +68,8 @@ var Dashboard = function (_React$Component) {
             addTaskDisabled: false,
             isLogOpen: false,
             logIndex: null,
-            isDownloadOpen: false,
-            downloadIndex: null
+            isInformationOpen: false,
+            informationIndex: null
         };
         return _this;
     }
@@ -560,19 +560,19 @@ var Dashboard = function (_React$Component) {
             });
         }
     }, {
-        key: 'openDownload',
-        value: function openDownload(index) {
+        key: 'openInformation',
+        value: function openInformation(index) {
             this.setState({
-                isDownloadOpen: true,
-                downloadIndex: index
+                isInformationOpen: true,
+                informationIndex: index
             });
         }
     }, {
-        key: 'toggleDownloadOpen',
-        value: function toggleDownloadOpen() {
+        key: 'toggleInformationOpen',
+        value: function toggleInformationOpen() {
             this.setState(function (prevState) {
                 return {
-                    isDownloadOpen: !prevState.isDownloadOpen
+                    isInformationOpen: !prevState.isInformationOpen
                 };
             });
         }
@@ -1137,7 +1137,7 @@ var Dashboard = function (_React$Component) {
                                         _react2.default.createElement(
                                             'td',
                                             null,
-                                            backup.status == "finished" ? _react2.default.createElement(_core.Button, { text: 'View details', intent: _core.Intent.PRIMARY, onClick: that.openDownload.bind(that, index) }) : null
+                                            backup.status == "finished" ? _react2.default.createElement(_core.Button, { text: 'View details', intent: _core.Intent.PRIMARY, onClick: that.openInformation.bind(that, index) }) : null
                                         )
                                     );
                                 }),
@@ -1154,18 +1154,18 @@ var Dashboard = function (_React$Component) {
                                         that.state.backups[that.state.logIndex].log
                                     )
                                 ) : null,
-                                that.state.downloadIndex != null ? _react2.default.createElement(
+                                that.state.informationIndex != null ? _react2.default.createElement(
                                     _core.Dialog,
                                     {
-                                        isOpen: that.state.isDownloadOpen,
-                                        onClose: that.toggleDownloadOpen.bind(that),
-                                        title: 'Download'
+                                        isOpen: that.state.isInformationOpen,
+                                        onClose: that.toggleInformationOpen.bind(that),
+                                        title: 'Additional information'
                                     },
-                                    that.state.backups[that.state.downloadIndex] ? _react2.default.createElement(
+                                    that.state.backups[that.state.informationIndex] ? _react2.default.createElement(
                                         _core.Callout,
                                         { title: 'Hashes', icon: 'lock', intent: _core.Intent.PRIMARY },
-                                        Object.keys(that.state.backups[that.state.downloadIndex].hashes).map(function (key) {
-                                            var hash = that.state.backups[that.state.downloadIndex].hashes[key];
+                                        Object.keys(that.state.backups[that.state.informationIndex].hashes).map(function (key) {
+                                            var hash = that.state.backups[that.state.informationIndex].hashes[key];
                                             return _react2.default.createElement(
                                                 _core.Label,
                                                 { text: key.toUpperCase() },
