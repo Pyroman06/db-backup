@@ -17,26 +17,29 @@ Schema.engines.mysql.methods = {
         stderr.push(Buffer.from('Starting backup...\n'))
         const gzip = spawn('gzip', ['-c']);
         hashStreams.map(function(stream) {
-            gzip.stdout.pipe(stream);
+            gzip.stdout.pipe(stream, {end: false});
         })
-        gzip.stdout.pipe(storageStream);
+        gzip.stdout.pipe(storageStream, {end: false});
         gzip.stderr.on('data', data => {
             stderr.push(data);
         });
         gzip.on('exit', code => {
-            stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
             if (code == 0) {
+                stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
                 cb(false, Buffer.concat(stderr).toString());
                 hashStreams.map(function(stream) {
                     stream.end();
                 })
                 storageStream.end();
             } else {
-                cb(true, Buffer.concat(stderr).toString());
+                if (code) {
+                    stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
+                    cb(true, Buffer.concat(stderr).toString());
+                }
             }
         })
         const mysqldump = spawn('mysqldump',['--all-databases', `--user=${input.database.options.username}`, `--password=${input.database.options.password}`, `--port=${input.database.options.port}`, `--host=${input.database.options.hostname}`, '--verbose']);
-        mysqldump.stdout.pipe(gzip.stdin);
+        mysqldump.stdout.pipe(gzip.stdin, {end: false});
         mysqldump.stderr.on('data', data => {
             stderr.push(data);
         });
@@ -46,6 +49,8 @@ Schema.engines.mysql.methods = {
                 gzip.stdin.end();
                 stderr.push(Buffer.from(`Starting compression...\n`))
             } else {
+                gzip.stdin.pause();
+                gzip.kill();
                 cb(true, Buffer.concat(stderr).toString());
             }
         })
@@ -62,9 +67,9 @@ Schema.engines.mongodb.methods = {
         stderr.push(Buffer.from('Starting backup...\n'))
         const mongodump = spawn('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive']);
         hashStreams.map(function(stream) {
-            mongodump.stdout.pipe(stream);
+            mongodump.stdout.pipe(stream, {end: false});
         })
-        mongodump.stdout.pipe(storageStream);
+        mongodump.stdout.pipe(storageStream, {end: false});
         mongodump.stderr.on('data', data => {
             stderr.push(data);
         });
@@ -96,28 +101,31 @@ Schema.engines.postgresql.methods = {
         stderr.push(Buffer.from('Starting backup...\n'))
         const gzip = spawn('gzip', ['-c']);
         hashStreams.map(function(stream) {
-            gzip.stdout.pipe(stream);
+            gzip.stdout.pipe(stream, {end: false});
         })
-        gzip.stdout.pipe(storageStream);
+        gzip.stdout.pipe(storageStream, {end: false});
         gzip.stderr.on('data', data => {
             stderr.push(data);
         });
         gzip.on('exit', code => {
-            stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
             if (code == 0) {
+                stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
                 cb(false, Buffer.concat(stderr).toString());
                 hashStreams.map(function(stream) {
                     stream.end();
                 })
                 storageStream.end();
             } else {
+                if (code) {
+                    stderr.push(Buffer.from(`Compression was completed with code ${code}.\n`))
+                }
                 cb(true, Buffer.concat(stderr).toString());
             }
         })
         let env = Object.create(process.env);
         env.PGPASSWORD = input.database.options.password;
         const pg_dump = spawn('pg_dumpall', [`--username=${input.database.options.username}`, `--port=${input.database.options.port}`, `--host=${input.database.options.hostname}`, '--no-password', '--no-role-password', '--verbose'], { env });
-        pg_dump.stdout.pipe(gzip.stdin);
+        pg_dump.stdout.pipe(gzip.stdin, {end: false});
         pg_dump.stderr.on('data', data => {
             stderr.push(data);
         });
@@ -127,6 +135,8 @@ Schema.engines.postgresql.methods = {
                 gzip.stdin.end();
                 stderr.push(Buffer.from(`Starting compression...\n`))
             } else {
+                gzip.stdin.pause();
+                gzip.kill();
                 cb(true, Buffer.concat(stderr).toString());
             }
         })

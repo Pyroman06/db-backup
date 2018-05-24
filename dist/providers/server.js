@@ -36,26 +36,29 @@ _schema2.default.engines.mysql.methods = {
         stderr.push(Buffer.from('Starting backup...\n'));
         var gzip = (0, _child_process.spawn)('gzip', ['-c']);
         hashStreams.map(function (stream) {
-            gzip.stdout.pipe(stream);
+            gzip.stdout.pipe(stream, { end: false });
         });
-        gzip.stdout.pipe(storageStream);
+        gzip.stdout.pipe(storageStream, { end: false });
         gzip.stderr.on('data', function (data) {
             stderr.push(data);
         });
         gzip.on('exit', function (code) {
-            stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
             if (code == 0) {
+                stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
                 cb(false, Buffer.concat(stderr).toString());
                 hashStreams.map(function (stream) {
                     stream.end();
                 });
                 storageStream.end();
             } else {
-                cb(true, Buffer.concat(stderr).toString());
+                if (code) {
+                    stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
+                    cb(true, Buffer.concat(stderr).toString());
+                }
             }
         });
         var mysqldump = (0, _child_process.spawn)('mysqldump', ['--all-databases', '--user=' + input.database.options.username, '--password=' + input.database.options.password, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--verbose']);
-        mysqldump.stdout.pipe(gzip.stdin);
+        mysqldump.stdout.pipe(gzip.stdin, { end: false });
         mysqldump.stderr.on('data', function (data) {
             stderr.push(data);
         });
@@ -65,6 +68,8 @@ _schema2.default.engines.mysql.methods = {
                 gzip.stdin.end();
                 stderr.push(Buffer.from('Starting compression...\n'));
             } else {
+                gzip.stdin.pause();
+                gzip.kill();
                 cb(true, Buffer.concat(stderr).toString());
             }
         });
@@ -81,9 +86,9 @@ _schema2.default.engines.mongodb.methods = {
         stderr.push(Buffer.from('Starting backup...\n'));
         var mongodump = (0, _child_process.spawn)('mongodump', ['--uri', input.database.options.uri, '--gzip', '--archive']);
         hashStreams.map(function (stream) {
-            mongodump.stdout.pipe(stream);
+            mongodump.stdout.pipe(stream, { end: false });
         });
-        mongodump.stdout.pipe(storageStream);
+        mongodump.stdout.pipe(storageStream, { end: false });
         mongodump.stderr.on('data', function (data) {
             stderr.push(data);
         });
@@ -114,28 +119,31 @@ _schema2.default.engines.postgresql.methods = {
         stderr.push(Buffer.from('Starting backup...\n'));
         var gzip = (0, _child_process.spawn)('gzip', ['-c']);
         hashStreams.map(function (stream) {
-            gzip.stdout.pipe(stream);
+            gzip.stdout.pipe(stream, { end: false });
         });
-        gzip.stdout.pipe(storageStream);
+        gzip.stdout.pipe(storageStream, { end: false });
         gzip.stderr.on('data', function (data) {
             stderr.push(data);
         });
         gzip.on('exit', function (code) {
-            stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
             if (code == 0) {
+                stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
                 cb(false, Buffer.concat(stderr).toString());
                 hashStreams.map(function (stream) {
                     stream.end();
                 });
                 storageStream.end();
             } else {
+                if (code) {
+                    stderr.push(Buffer.from('Compression was completed with code ' + code + '.\n'));
+                }
                 cb(true, Buffer.concat(stderr).toString());
             }
         });
         var env = Object.create(process.env);
         env.PGPASSWORD = input.database.options.password;
         var pg_dump = (0, _child_process.spawn)('pg_dumpall', ['--username=' + input.database.options.username, '--port=' + input.database.options.port, '--host=' + input.database.options.hostname, '--no-password', '--no-role-password', '--verbose'], { env: env });
-        pg_dump.stdout.pipe(gzip.stdin);
+        pg_dump.stdout.pipe(gzip.stdin, { end: false });
         pg_dump.stderr.on('data', function (data) {
             stderr.push(data);
         });
@@ -145,6 +153,8 @@ _schema2.default.engines.postgresql.methods = {
                 gzip.stdin.end();
                 stderr.push(Buffer.from('Starting compression...\n'));
             } else {
+                gzip.stdin.pause();
+                gzip.kill();
                 cb(true, Buffer.concat(stderr).toString());
             }
         });
