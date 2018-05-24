@@ -41,7 +41,7 @@ function CalculateHashes(cb) {
     sha256.on('readable', () => {
         const data = sha256.read();
         if (data) {
-            sha512Val = data.toString('hex');
+            sha256Val = data.toString('hex');
             CheckHashes();
         }
     })
@@ -49,7 +49,7 @@ function CalculateHashes(cb) {
     sha512.on('readable', () => {
         const data = sha512.read();
         if (data) {
-            sha256Val = data.toString('hex');
+            sha512Val = data.toString('hex');
             CheckHashes();
         }
     })
